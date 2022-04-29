@@ -1,8 +1,10 @@
 #include<iostream>
+using namespace std;
 
 
-
-void main()
+int  main()
 {
-    
+    cout<<"Webserve Start"<<endl;
+
+    return 0;
 }
