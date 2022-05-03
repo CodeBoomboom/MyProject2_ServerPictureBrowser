@@ -52,12 +52,19 @@ public:
             throw std::exception();
         }
     }
-
-
+    
     ~cond(){
         pthread_cond_destroy(&m_cond);
     }
+    bool wait(pthread_mutex_t* mutex){
+       return  pthread_cond_wait(&m_cond, mutex) == 0;
+    }
 
+    bool timewait(pthread_mutex_t* mutex, struct timespec t){
+       return  pthread_cond_timedwait(&m_cond, mutex,&t) == 0;
+    }
+
+    
 private:
     pthread_cond_t m_cond;
 
