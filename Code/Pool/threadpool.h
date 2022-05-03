@@ -63,7 +63,7 @@ private:
 template<typename T>
 threadpool<T>::threadpool(int thread_number, int max_requests):
     m_thread_number(thread_number),m_max_requests(max_requests),
-    m_stop(false), m_thread(NULL){
+    m_stop(false), m_threads(NULL){
     
     if((thread_number <= 0) || (max_requests) <= 0){
         throw std::exception();
@@ -175,7 +175,7 @@ void threadpool<T>::run(){
         m_workqueue.pop_front();
         m_queuelocker.unlock();
 
-        if(!request){//若没有获取到了则continue
+        if(!request){//若没有获取到则continue
             continue;
         }
 
