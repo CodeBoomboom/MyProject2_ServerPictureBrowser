@@ -46,6 +46,7 @@ private:
 private:
     //子线程处理函数
     static void* worker(void* arg);
+    void run();
 };
 
 /********************************************************************
@@ -77,7 +78,7 @@ threadpool<T>::threadpool(int thread_number, int max_requests):
     for(int i = 0; i<thread_number; i++){
         printf("create the %dth thread\n", i);
 
-        if(pthread_create(m_threads + i, NULL, worker, NULL) != 0){   //C++中worker必须是一个静态函数
+        if(pthread_create(m_threads + i, NULL, worker, (void*)this) != 0){   //C++中worker必须是一个静态函数，无法访问非静态成员，所以只能通过将this指针传给worker来实现对当前对象的非静态成员的访问
             delete [] m_threads;
             throw std::exception();
         }
@@ -131,10 +132,62 @@ bool threadpool<T>::append(T* request){
     return true;
 }
 
+/********************************************************************
+@FunName:worker(void* arg)
+@Input:  arg:当前对象的this指针(需强转)
+@Output: None
+@Retuval:None
+@Notes:  子线程处理函数，当有任务添加到任务队列时，调用子线程处理
+@Author: XiaoDexin
+@Email:  xiaodexin0701@163.com
+@Time:   2022/05/03 17:16:24
+********************************************************************/
 template<class T>
 void* threadpool<T>::worker(void* arg){
-    //注意：在静态函数里不能访问非静态成员
+    //注意：在静态函数里不能访问非静态成员变量/函数，只能通过传this指针来实现对当前对象的非静态成员的访问
+    threadpool * pool = (threadpool*)arg;
+    pool->run();
+    
+
 }
+
+/********************************************************************
+@FunName:void run()
+@Input:  None
+@Output: None
+@Retuval:None
+@Notes:  子线程运行函数，由子线程处理函数worker调用。从任务队列中取一个任务
+@Author: XiaoDexin
+@Email:  xiaodexin0701@163.com
+@Time:   2022/05/03 17:20:10
+********************************************************************/
+template<class T>
+void threadpool<T>::run(){
+    while(!m_stop){
+        m_queuestat.wait();//若信号量>0,则-1，否则阻塞在此
+        m_queuelocker.lock();
+        if(m_workqueue.empty()){//没数据
+            m_queuelocker.unlock();
+            continue;
+        }
+
+        T* request = m_workqueue.front();
+        m_workqueue.pop_front();
+        m_queuelocker.unlock();
+
+        if(!request){//若没有获取到了则continue
+            continue;
+        }
+
+        request->process();//process：任务函数
+    }
+}
+
+
+
+
+
+
 
 
 #endif
