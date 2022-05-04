@@ -40,6 +40,7 @@ public:
     ~http_conn();
 
     void process(); //处理客户端的请求
+    void init(int sockfd, sockaddr_in &addr);   //初始化新接收的连接（客户端）
 
 
 private:

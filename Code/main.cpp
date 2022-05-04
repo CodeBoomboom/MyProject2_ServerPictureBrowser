@@ -131,7 +131,22 @@ int  main(int argc, char* argv[])
         //循环遍历事件数组
         for(int i = 0; i<num; i++){
             int sockfd = events[i].data.fd;
-            
+            if(sockfd == listenfd){
+                //有新客户端连接进来
+                struct sockaddr_in client_address;
+                socklen_t client_addrlen = sizeof(client_address);
+                int connfd = Accept(listenfd, (sockaddr*)&client_address,&client_addrlen);
+
+                if(http_conn::m_user_count >= MAX_FD){
+                    //目前连接数满了
+                    //给客户端写一个信息：服务器内部正忙
+                    std::cout<<"目前连接数满了"<<std::endl;
+                    Close(connfd);
+                    continue;
+                }
+                //将新的客户端的数据初始化，并将此客户端信息加入users数组中
+                users[connfd].init(connfd, client_address);       //直接将connfd作为索引，方便之后的操作
+            }
         }
         
     }

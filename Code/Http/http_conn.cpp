@@ -62,3 +62,29 @@ void modfd(int epollfd, int fd, int ev)
     event.events = ev | EPOLLONESHOT | EPOLLRDHUP;
     Epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
 }
+
+
+void http_conn::init(int sockfd, sockaddr_in &addr)
+{
+    m_sockfd = sockfd;
+    m_address = addr;
+
+    //端口复用
+    int reuse = 1;
+    setsockopt(m_sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
+    //添加到epoll红黑树中
+    addfd(m_epollfd, m_sockfd, true);   //connfd需要有onshot事件
+    m_user_count++; //总用户数（客户端数）+1
+}
+
+
+
+
+
+
+
+
+
+
+
