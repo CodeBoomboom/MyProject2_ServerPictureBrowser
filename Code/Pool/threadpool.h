@@ -69,6 +69,7 @@ threadpool<T>::threadpool(int thread_number, int max_requests):
         throw std::exception();
     }
 
+    //创建线程池，内有m_thread_number个线程
     m_threads = new pthread_t[m_thread_number];
     if(!m_threads){
         throw std::exception();
@@ -78,11 +79,12 @@ threadpool<T>::threadpool(int thread_number, int max_requests):
     for(int i = 0; i<thread_number; i++){
         printf("create the %dth thread\n", i);
 
+        //通过第一个参数m_threads + i就将每个子线程按顺序创建出来了
         if(pthread_create(m_threads + i, NULL, worker, (void*)this) != 0){   //C++中worker必须是一个静态函数，无法访问非静态成员，所以只能通过将this指针传给worker来实现对当前对象的非静态成员的访问
             delete [] m_threads;
             throw std::exception();
         }
-
+        //线程分离
         if(pthread_detach(m_threads[i]) != 0){
             delete [] m_threads;
             throw std::exception();
@@ -111,7 +113,7 @@ threadpool<T>::~threadpool(){
 @FunName:append(T* request)
 @Input:  T* request:任务队列
 @Output: None
-@Retuval:None
+@Retuval:true：添加成功。false：添加失败
 @Notes:  向任务队列中添加任务
 @Author: XiaoDexin
 @Email:  xiaodexin0701@163.com
@@ -146,9 +148,7 @@ template<class T>
 void* threadpool<T>::worker(void* arg){
     //注意：在静态函数里不能访问非静态成员变量/函数，只能通过传this指针来实现对当前对象的非静态成员的访问
     threadpool * pool = (threadpool*)arg;
-    pool->run();
-    
-
+    pool->run();   
 }
 
 /********************************************************************
@@ -179,7 +179,7 @@ void threadpool<T>::run(){
             continue;
         }
 
-        request->process();//process：任务函数
+        request->process();//process：任务函数。因为用的是proactor模式，所以到这一步的时候数据已经获取到了
     }
 }
 

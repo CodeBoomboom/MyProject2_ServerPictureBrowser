@@ -16,6 +16,8 @@ public:
     http_conn();
     ~http_conn();
 
+    void process(); //处理客户端的请求
+
 
 private:
 
