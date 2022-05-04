@@ -13,6 +13,9 @@
 #include"signal.h"
 #include"Http/http_conn.h"
 
+#define MAX_FD  65535   //最大的文件描述符数
+
+
 /********************************************************************
 @FunName:void addsig(int sig, void(handler)(int))
 @Input:  sig:信号
@@ -55,6 +58,11 @@ int  main(int argc, char* argv[])
     }catch(...){
         exit(-1);
     }
+
+    //创建一个数组用于保存所有的客户端信息
+    http_conn * users = new http_conn[MAX_FD];
+
+
 
     std::cout<<"Webserve Start"<<std::endl;
 
