@@ -1,6 +1,25 @@
 #include"http_conn.h"
 
 
+
+
+/********************************************************************
+@FunName:void setnonblocking(int fd)
+@Input:  fd :要设置的文件描述符
+@Output: None
+@Retuval:None
+@Notes:  设置指定文件描述符为非阻塞
+@Author: XiaoDexin
+@Email:  xiaodexin0701@163.com
+@Time:   2022/05/04 18:32:32
+********************************************************************/
+void setnonblocking(int fd){
+    int old_flag = fcntl(fd, F_GETFL);
+    int new_flag = old_flag | O_NONBLOCK;
+    fcntl(fd, F_SETFL, new_flag);
+}
+
+
 /********************************************************************
 @FunName:int addfd(int epollfd, int fd)
 @Input:  epollfd:epoll句柄
@@ -22,6 +41,9 @@ void addfd(int epollfd, int fd, bool one_shot)
         event.events | EPOLLONESHOT;
     }
     Epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
+    
+    //设置文件描述符为非阻塞
+    setnonblocking(fd);
 }
 
 
@@ -63,7 +85,7 @@ void modfd(int epollfd, int fd, int ev)
     Epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
 }
 
-
+//初始化连接
 void http_conn::init(int sockfd, sockaddr_in &addr)
 {
     m_sockfd = sockfd;
@@ -78,6 +100,14 @@ void http_conn::init(int sockfd, sockaddr_in &addr)
     m_user_count++; //总用户数（客户端数）+1
 }
 
+//关闭连接
+void http_conn::close_conn(){
+    if(m_sockfd != -1){
+        removefd(m_epollfd, m_sockfd);
+        m_sockfd = -1;
+        m_user_count--;//客户端总数减1
+    }
+}
 
 
 

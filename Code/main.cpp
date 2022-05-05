@@ -146,19 +146,32 @@ int  main(int argc, char* argv[])
                 }
                 //将新的客户端的数据初始化，并将此客户端信息加入users数组中
                 users[connfd].init(connfd, client_address);       //直接将connfd作为索引，方便之后的操作
+            }else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
+                //对方异常断开或者错误等事件
+                users[sockfd].close_conn();
+            }else if(events[i].events & EPOLLIN){
+                //可读
+                if(users[sockfd].read()){//一次性把数据都读完
+                    //交给线程池处理
+                    pool->append(users + sockfd);   //users + sockfd就是该sockfd的地址，因为sockfd也是users[sockfd]的索引值
+                }else{
+                    //读失败
+                    users[sockfd].close_conn();
+                }
+            }else if(events[i].events & EPOLLOUT){
+                //可写
+                if(!users[sockfd].write()){//一次性写完所有数据
+                    //写失败
+                    users[sockfd].close_conn();
+                }
             }
         }
         
     }
-
-
-
-
-
-
-
-
-    std::cout<<"Webserve Start"<<std::endl;
-
+    Close(epollfd);
+    Close(listenfd);
+    delete [] users;
+    delete [] pool;
+    
     return 0;
 }

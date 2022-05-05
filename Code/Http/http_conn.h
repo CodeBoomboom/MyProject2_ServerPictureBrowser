@@ -41,6 +41,9 @@ public:
 
     void process(); //处理客户端的请求
     void init(int sockfd, sockaddr_in &addr);   //初始化新接收的连接（客户端）
+    void close_conn();  //关闭连接
+    bool read();
+    bool write();
 
 
 private:
