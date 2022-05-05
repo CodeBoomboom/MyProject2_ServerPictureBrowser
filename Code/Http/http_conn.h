@@ -37,8 +37,8 @@ public:
     static int m_user_count;    //统计用户数量
 
 
-    http_conn();
-    ~http_conn();
+    http_conn(){}
+    ~http_conn(){}
 
     void process(); //处理客户端的请求(线程池的工作线程即子线程执行的代码)
     void init(int sockfd, sockaddr_in &addr);   //初始化新接收的连接（客户端）

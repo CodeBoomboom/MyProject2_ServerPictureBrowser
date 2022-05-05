@@ -1,6 +1,6 @@
 CXX = g++
 #g++：编译方式为C++，若是C语言则为gcc
-CFLAGS = -std=c++14 -O2 -Wall -g -pthread -lmysqlclient
+CFLAGS = -std=c++14 -O2 -g -pthread -lmysqlclient
 #-std=c++14：指定c++库版本为c++14
 #-O2：编译优化参数，常见的-O0(不启用优化)，-O2/-O3(全局优化)
 #-Wall：输出警告信息
@@ -13,7 +13,7 @@ TARGET = My_Webserver
        ../code/http/*.cpp ../code/server/*.cpp \
        ../code/buffer/*.cpp ../code/main.cpp
 OBJS = $(wildcard ../Code/Log/*.cpp ../Code/Pool/*.cpp ../Code/Timer/*.cpp \
-				../Code/Http/*.cpp ../Code/Server/*.cpp ../Code/Wrap/*.c \
+				../Code/Http/*.cpp ../Code/Server/*.cpp ../Code/Wrap/*.cpp \
 				../Code/Buffer/*.cpp ../Code/main.cpp)#匹配相关目录下的所有.cpp文件
 
 ALL:$(OBJS)

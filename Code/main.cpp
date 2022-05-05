@@ -73,7 +73,7 @@ extern void removefd(int epollfd, int fd);
 extern void modfd(int epollfd,  int fd, int ev);
 
 
-int  main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     if(argc <= 1){
         std::cout<<"按照如下格式运行："<<basename(argv[0])<<"port_number"<<std::endl;   // ./server 端口号
