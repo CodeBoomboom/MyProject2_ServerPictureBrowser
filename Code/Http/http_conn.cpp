@@ -1,7 +1,8 @@
 #include"http_conn.h"
 
 
-
+int http_conn::m_epollfd = -1;
+int http_conn::m_user_count = 0;
 
 /********************************************************************
 @FunName:void setnonblocking(int fd)
@@ -110,9 +111,34 @@ void http_conn::close_conn(){
 }
 
 
+//非阻塞的读
+bool http_conn::read()
+{
+    std::cout<<"一次性读完数据"<<std::endl;
+    return true;//还没完成，先return true
+}
 
 
 
+//非阻塞的写
+bool http_conn::write()
+{
+    std::cout<<"一次性写完数据"<<std::endl;
+    return true;//还没完成，先return true
+}
+
+
+//处理客户端的请求(线程池中的工作线程即子线程执行的代码)
+void http_conn::process()
+{
+    //解析HTTP请求
+
+    std::cout<<"解析请求，生成响应"<<std::endl;
+
+
+    //生成响应
+
+}
 
 
 

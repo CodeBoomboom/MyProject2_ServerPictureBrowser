@@ -10,6 +10,7 @@
 #ifndef _HTTP_CONN_H_
 #define _HTTP_CONN_H_
 
+#include<iostream>
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
@@ -39,11 +40,11 @@ public:
     http_conn();
     ~http_conn();
 
-    void process(); //处理客户端的请求
+    void process(); //处理客户端的请求(线程池的工作线程即子线程执行的代码)
     void init(int sockfd, sockaddr_in &addr);   //初始化新接收的连接（客户端）
     void close_conn();  //关闭连接
-    bool read();
-    bool write();
+    bool read();        //非阻塞的读
+    bool write();       //非阻塞的写
 
 
 private:

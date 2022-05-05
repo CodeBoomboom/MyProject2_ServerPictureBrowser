@@ -76,7 +76,7 @@ extern void modfd(int epollfd,  int fd, int ev);
 int  main(int argc, char* argv[])
 {
     if(argc <= 1){
-        std::cout<<"按照如下格式运行："<<basename(argv[0])<<"port_number"<<std::endl;
+        std::cout<<"按照如下格式运行："<<basename(argv[0])<<"port_number"<<std::endl;   // ./server 端口号
         exit(-1);
     }
 
@@ -126,7 +126,7 @@ int  main(int argc, char* argv[])
 
 
     while(true){
-        int num = Epoll_wait(epollfd, events, MAX_EVENT_NUMBER, -1);
+        int num = Epoll_wait(epollfd, events, MAX_EVENT_NUMBER, -1);//阻塞监听epoll上的fd
 
         //循环遍历事件数组
         for(int i = 0; i<num; i++){
@@ -139,7 +139,7 @@ int  main(int argc, char* argv[])
 
                 if(http_conn::m_user_count >= MAX_FD){
                     //目前连接数满了
-                    //给客户端写一个信息：服务器内部正忙
+                    //*给客户端写一个信息：服务器内部正忙
                     std::cout<<"目前连接数满了"<<std::endl;
                     Close(connfd);
                     continue;
