@@ -455,7 +455,12 @@ ssize_t Recv(int fd, void *buf, size_t n, int flags)
 	ssize_t i;
 	if((i = recv(fd,buf,n,flags)) < 0)
 	{
-		perr_exit("recv error");
+		if(errno == EAGAIN || errno == EWOULDBLOCK){
+			//没有数据
+		}		
+		else{
+			perr_exit("recv error");
+		}
 	}
 	return i;
 }

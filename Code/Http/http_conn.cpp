@@ -36,8 +36,8 @@ void addfd(int epollfd, int fd, bool one_shot)
 {
     epoll_event event;
     event.data.fd = fd;
-    event.events = EPOLLIN | EPOLLRDHUP;//EPOLLRDHUP是内核2.6.17后才有的，该事件作用是若对端连接断开时，触发此事件，在底层对对端断开进行处理（之前是在上层通过Recv函数返回值判断）
-
+    //event.events = EPOLLIN | EPOLLRDHUP;//EPOLLRDHUP是内核2.6.17后才有的，该事件作用是若对端连接断开时，触发此事件，在底层对对端断开进行处理（之前是在上层通过Recv函数返回值判断）
+    event.events = EPOLLIN | EPOLLRDHUP | EPOLLET;
     if(one_shot){
         event.events | EPOLLONESHOT;
     }
@@ -112,9 +112,35 @@ void http_conn::close_conn(){
 
 
 //非阻塞的读
+//循环读取客户数据，直到无数据可读或者对方关闭连接
 bool http_conn::read()
 {
-    std::cout<<"一次性读完数据"<<std::endl;
+    if(m_read_idx >= READ_BUFFER_SIZE){
+        return false;
+    }
+
+
+    //读取到的字节
+    int bytes_read = 0;
+    while(true){
+        bytes_read = Recv(m_sockfd, m_read_buf+m_read_idx, READ_BUFFER_SIZE-m_read_idx, 0);//前面可能已经有数据读到缓冲区了，所以应该保存到缓冲区的m_read_buf+m_read_idx位置，缓冲区的剩余大小也就为READ_BUFFER_SIZE-m_read_idx
+        if(bytes_read == -1){
+		    if(errno == EAGAIN || errno == EWOULDBLOCK){
+			    //没有数据，跳出循环
+                break;
+		    }else{
+                //实际上在Recv中已经封装了出错处理，若真出错了不会走到这
+                return false;
+            }            
+        }else if(bytes_read == 0){
+            //对方关闭连接
+            return false;
+        }
+        //读到数据
+        //更新m_read_idx
+        m_read_idx += bytes_read;
+    }
+    std::cout<<"读到了数据:"<<std::endl<<m_read_buf<<std::endl;
     return true;//还没完成，先return true
 }
 

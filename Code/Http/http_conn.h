@@ -35,7 +35,8 @@ public:
 
     static int m_epollfd;       //epollfd是所有的http_conn对象（任务对象）所共享的———所有的socket上的事件都被注册到一个epoll对象中（挂到一棵以epoll为根的红黑树上）
     static int m_user_count;    //统计用户数量
-
+    static const int READ_BUFFER_SIZE = 2048;   //读缓冲大小
+    static const int WRITE_BUFFER_SIZE = 1024;  //写缓冲大小
 
     http_conn(){}
     ~http_conn(){}
@@ -50,6 +51,8 @@ public:
 private:
     int m_sockfd;           //该HTTP连接的socket
     sockaddr_in m_address;  //通信的socket地址
+    char m_read_buf[READ_BUFFER_SIZE];  //读缓冲区
+    int m_read_idx;         //标识读缓冲区中已经读入的客户端数据的最后一个字节的下一个位置
 
 
 };
