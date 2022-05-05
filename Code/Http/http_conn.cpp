@@ -133,7 +133,7 @@ void http_conn::process()
 {
     //解析HTTP请求
 
-    std::cout<<"解析请求，生成响应"<<std::endl;
+    std::cout<<"process解析请求，生成响应"<<std::endl;
 
 
     //生成响应

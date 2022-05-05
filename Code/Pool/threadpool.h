@@ -130,6 +130,7 @@ bool threadpool<T>::append(T* request){
 
     m_workqueue.push_back(request);
     m_queuelocker.unlock();
+    std::cout<<"已将该客户端添加到线程池"<<std::endl;
     m_queuestat.post();
     return true;
 }
@@ -165,6 +166,7 @@ template<class T>
 void threadpool<T>::run(){
     while(!m_stop){
         m_queuestat.wait();//若信号量>0,则-1，否则阻塞在此
+        std::cout<<"工作线程（子线程）开始处理"<<std::endl;
         m_queuelocker.lock();
         if(m_workqueue.empty()){//没数据
             m_queuelocker.unlock();

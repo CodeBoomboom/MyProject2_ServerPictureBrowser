@@ -88,16 +88,22 @@ int main(int argc, char* argv[])
     addsig(SIGPIPE,SIG_IGN);
 
     //创建线程池，初始化线程池
+    std::cout<<"创建线程池threadpool..."<<std::endl;
     threadpool<http_conn> * pool = NULL;
     try{
         pool = new threadpool<http_conn>;
     }catch(...){
         exit(-1);
     }
+    std::cout<<"线程池threadpool创建完成！"<<std::endl;
 
     //创建一个数组用于保存所有的客户端信息
+    std::cout<<"创建http_conn任务队列数组users..."<<std::endl;
     http_conn * users = new http_conn[MAX_FD];
-
+    std::cout<<"http_conn任务队列数组users创建完成！"<<std::endl;
+    
+    sleep(2);
+    std::cout<<"开始进行网络通信相关流程"<<std::endl;
     //监听套接字  
     int listenfd = Socket(PF_INET, SOCK_STREAM, 0);
     
@@ -116,6 +122,7 @@ int main(int argc, char* argv[])
     Listen(listenfd,5);
 
     //创建epoll对象，事件数组，添加
+    std::cout<<"创建epoll对象"<<std::endl;
     epoll_event events[MAX_EVENT_NUMBER];
     int epollfd = Epoll_create(5);
 
@@ -126,6 +133,7 @@ int main(int argc, char* argv[])
 
 
     while(true){
+        std::cout<<"epoll_wait..."<<std::endl;
         int num = Epoll_wait(epollfd, events, MAX_EVENT_NUMBER, -1);//阻塞监听epoll上的fd
 
         //循环遍历事件数组
@@ -133,10 +141,14 @@ int main(int argc, char* argv[])
             int sockfd = events[i].data.fd;
             if(sockfd == listenfd){
                 //有新客户端连接进来
+                std::cout<<"有新客户端连接"<<std::endl;
                 struct sockaddr_in client_address;
                 socklen_t client_addrlen = sizeof(client_address);
                 int connfd = Accept(listenfd, (sockaddr*)&client_address,&client_addrlen);
-
+                char str[INET_ADDRSTRLEN];
+                std::cout<<"新客户端IP："<<inet_ntop(AF_INET,&client_address.sin_addr,str,sizeof(str))<<\
+                "端口号："<<ntohs(client_address.sin_port)<<std::endl;
+                sleep(3);
                 if(http_conn::m_user_count >= MAX_FD){
                     //目前连接数满了
                     //*给客户端写一个信息：服务器内部正忙
@@ -146,11 +158,14 @@ int main(int argc, char* argv[])
                 }
                 //将新的客户端的数据初始化，并将此客户端信息加入users数组中
                 users[connfd].init(connfd, client_address);       //直接将connfd作为索引，方便之后的操作
+                std::cout<<"已将客户端数据加入users数组中(将connfd挂到epollfd上)"<<std::endl;
             }else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
                 //对方异常断开或者错误等事件
+                std::cout<<"客户端异常断开"<<std::endl;
                 users[sockfd].close_conn();
             }else if(events[i].events & EPOLLIN){
                 //可读
+                std::cout<<"可读"<<std::endl;
                 if(users[sockfd].read()){//一次性把数据都读完
                     //交给线程池处理
                     pool->append(users + sockfd);   //users + sockfd就是该sockfd的地址，因为sockfd也是users[sockfd]的索引值
@@ -160,6 +175,7 @@ int main(int argc, char* argv[])
                 }
             }else if(events[i].events & EPOLLOUT){
                 //可写
+                std::cout<<"可写"<<std::endl;
                 if(!users[sockfd].write()){//一次性写完所有数据
                     //写失败
                     users[sockfd].close_conn();
