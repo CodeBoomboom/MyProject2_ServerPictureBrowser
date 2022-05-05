@@ -129,7 +129,7 @@ bool threadpool<T>::append(T* request){
     }
 
     m_workqueue.push_back(request);
-    m_workqueue.unlock();
+    m_queuelocker.unlock();
     m_queuestat.post();
     return true;
 }

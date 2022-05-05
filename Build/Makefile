@@ -12,9 +12,9 @@ TARGET = My_Webserver
 #OBJS = ../code/log/*.cpp ../code/pool/*.cpp ../code/timer/*.cpp \
        ../code/http/*.cpp ../code/server/*.cpp \
        ../code/buffer/*.cpp ../code/main.cpp
-OBJS = $(wildcard ../code/log/*.cpp ../code/pool/*.cpp ../code/timer/*.cpp \
-				../code/http/*.cpp ../code/server/*.cpp \
-				../code/buffer/*.cpp ../code/main.cpp)#匹配相关目录下的所有.cpp文件
+OBJS = $(wildcard ../Code/Log/*.cpp ../Code/Pool/*.cpp ../Code/Timer/*.cpp \
+				../Code/Http/*.cpp ../Code/Server/*.cpp ../Code/Wrap/*.c \
+				../Code/Buffer/*.cpp ../Code/main.cpp)#匹配相关目录下的所有.cpp文件
 
 ALL:$(OBJS)
 	$(CXX) $^ -o ../bin/$(TARGET)  $(CFLAGS) 

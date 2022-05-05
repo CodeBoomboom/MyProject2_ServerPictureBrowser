@@ -8,11 +8,11 @@
 #include<errno.h>
 #include<sys/epoll.h>
 #include<fcntl.h>
-#include"Pool/locker.h"
-#include"Pool/threadpool.h"
+#include"./Pool/locker.h"
+#include"./Pool/threadpool.h"
 #include"signal.h"
-#include"Http/http_conn.h"
-#include"Wrap/wrap.h"
+#include"./Http/http_conn.h"
+#include"./Wrap/wrap.h"
 
 #define MAX_FD  65535   //最大的文件描述符数
 #define MAX_EVENT_NUMBER 10000   //监听的最大的事件数量

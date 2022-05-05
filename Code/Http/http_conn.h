@@ -26,8 +26,8 @@
 #include<signal.h>
 #include<sys/types.h>
 #include<sys/uio.h>
-#include"Pool/locker.h"
-#include"Wrap/wrap.h"
+#include"../Pool/locker.h"
+#include"../Wrap/wrap.h"
 
 //任务类
 class http_conn{
