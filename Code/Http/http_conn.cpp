@@ -37,7 +37,7 @@ void addfd(int epollfd, int fd, bool one_shot)
     epoll_event event;
     event.data.fd = fd;
     //event.events = EPOLLIN | EPOLLRDHUP;//EPOLLRDHUP是内核2.6.17后才有的，该事件作用是若对端连接断开时，触发此事件，在底层对对端断开进行处理（之前是在上层通过Recv函数返回值判断）
-    event.events = EPOLLIN | EPOLLRDHUP | EPOLLET;
+    event.events = EPOLLIN | EPOLLRDHUP | EPOLLET;//边沿触发
     if(one_shot){
         event.events | EPOLLONESHOT;
     }
@@ -162,6 +162,8 @@ bool http_conn::write()
 void http_conn::process()
 {
     //解析HTTP请求
+    //process_read();
+    //有限状态机
 
     std::cout<<"process解析请求，生成响应"<<std::endl;
 

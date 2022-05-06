@@ -168,7 +168,7 @@ void threadpool<T>::run(){
         m_queuestat.wait();//若信号量>0,则-1，否则阻塞在此
         std::cout<<"工作线程（子线程）开始处理"<<std::endl;
         m_queuelocker.lock();
-        if(m_workqueue.empty()){//没数据
+        if(m_workqueue.empty()){//没数据(任务)
             m_queuelocker.unlock();
             continue;
         }

@@ -148,6 +148,7 @@ int main(int argc, char* argv[])
                 char str[INET_ADDRSTRLEN];
                 std::cout<<"新客户端IP："<<inet_ntop(AF_INET,&client_address.sin_addr,str,sizeof(str))<<\
                 "端口号："<<ntohs(client_address.sin_port)<<std::endl;
+                std::cout<<"connfd:"<<connfd<<std::endl;
                 sleep(3);
                 if(http_conn::m_user_count >= MAX_FD){
                     //目前连接数满了
@@ -168,7 +169,7 @@ int main(int argc, char* argv[])
                 std::cout<<"可读"<<std::endl;
                 if(users[sockfd].read()){//一次性把数据都读完
                     //交给线程池处理
-                    pool->append(users + sockfd);   //users + sockfd就是该sockfd的地址，因为sockfd也是users[sockfd]的索引值
+                    pool->append(users + sockfd);   //users + sockfd就是该sockfd的地址，因为sockfd也是users[sockfd]的索引值(在第160行添加的时候是直接将connfd作为索引的)
                 }else{
                     //读失败
                     users[sockfd].close_conn();
