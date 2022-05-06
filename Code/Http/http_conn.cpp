@@ -150,6 +150,38 @@ bool http_conn::read()
 
 
 
+//解析HTTP请求（解析m_read_buf中的数据）
+HTTP_CODE http_conn::process_read()
+{
+
+}
+
+//解析HTTP请求首行
+HTTP_CODE http_conn::prase_request_line(char * text)
+{
+
+}
+
+//解析HTTP请求头
+HTTP_CODE http_conn::prase_request_line(char * text)
+{
+
+}
+
+//解析HTTP请求体
+HTTP_CODE http_conn::prase_request_content(char * text)
+{
+
+}
+
+//解析一行(获取一行），根据\r\n来
+LINE_STATUS http_conn::parse_line(char * text)
+{
+
+}
+
+
+
 //非阻塞的写
 bool http_conn::write()
 {
@@ -157,13 +189,18 @@ bool http_conn::write()
     return true;//还没完成，先return true
 }
 
-
 //处理客户端的请求(线程池中的工作线程即子线程执行的代码)
 void http_conn::process()
 {
     //解析HTTP请求
-    //process_read();
     //有限状态机
+    HTTP_CODE read_ret = process_read();
+    if(read_ret == NO_REQUEST){
+        //请求不完整，需要继续读客户端，要重置一下事件
+        modfd(m_epollfd, m_sockfd, EPOLLIN);
+        return;
+    }
+    
 
     std::cout<<"process解析请求，生成响应"<<std::endl;
 

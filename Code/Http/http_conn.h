@@ -60,6 +60,14 @@ public:
         CHECK_STATE_CONTENT
     };
 
+    //从状态机的三种可能状态，即行的读取状态，分别表示
+    //1.读取到一个完整的行  2.行出错    3. 行数据尚且不完整
+    enum LINE_STATUS{
+        LINE_OK = 0,
+        LINE_BAD,
+        LINE_OPEN
+    };
+
     /*服务器处理HTTP请求的可能结果，报文解析的结果
         NO_REQUEST          :   请求不完整，需要继续读取客户数据
         GET_REQUEST         :   表示获得了一个完整的客户请求
@@ -80,14 +88,6 @@ public:
         INTERNAL_ERROR,
         CLOSED_CONNECTION
     };
-    
-    //从状态机的三种可能状态，即行的读取状态，分别表示
-    //1.读取到一个完整的行  2.行出错    3. 行数据尚且不完整
-    enum LINE_STATUS{
-        LINE_OK = 0,
-        LINE_BAD,
-        LINE_OPEN
-    };
 
     http_conn(){}
     ~http_conn(){}
@@ -97,6 +97,13 @@ public:
     void close_conn();  //关闭连接
     bool read();        //非阻塞的读
     bool write();       //非阻塞的写
+
+    HTTP_CODE process_read();       //解析HTTP请求（解析m_read_buf中的数据）
+    HTTP_CODE prase_request_line(char * text); //解析HTTP请求首行
+    HTTP_CODE prase_request_line(char * text); //解析HTTP请求头
+    HTTP_CODE prase_request_content(char * text); //解析HTTP请求体
+
+    LINE_STATUS parse_line(char * text);    //解析一行(获取一行），根据\r\n来
 
 
 private:
