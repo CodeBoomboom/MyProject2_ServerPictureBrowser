@@ -60,8 +60,8 @@ public:
         CHECK_STATE_CONTENT
     };
 
-    //从状态机的三种可能状态，即行的读取状态，分别表示
-    //1.读取到一个完整的行  2.行出错    3. 行数据尚且不完整
+    /*从状态机的三种可能状态，即行的读取状态，分别表示
+    1.读取到一个完整的行  2.行出错    3. 行数据尚且不完整*/
     enum LINE_STATUS{
         LINE_OK = 0,
         LINE_BAD,
@@ -98,13 +98,6 @@ public:
     bool read();        //非阻塞的读
     bool write();       //非阻塞的写
 
-    HTTP_CODE process_read();       //解析HTTP请求（解析m_read_buf中的数据）
-    HTTP_CODE prase_request_line(char * text); //解析HTTP请求首行
-    HTTP_CODE prase_request_line(char * text); //解析HTTP请求头
-    HTTP_CODE prase_request_content(char * text); //解析HTTP请求体
-
-    LINE_STATUS parse_line(char * text);    //解析一行(获取一行），根据\r\n来
-
 
 private:
     int m_sockfd;           //该HTTP连接的socket
@@ -112,7 +105,18 @@ private:
     char m_read_buf[READ_BUFFER_SIZE];  //读缓冲区
     int m_read_idx;         //标识读缓冲区中已经读入的客户端数据的最后一个字节的下一个位置
 
+    int m_checked_index;    //当前正在解析的字符在读缓冲区的位置
+    int m_start_line;       //当前正在解析的行的起始位置
+    CHECK_STATE m_check_state;  //主状态机当前所处的状态
+    void init();            //初始化连接其余的信息
 
+    HTTP_CODE process_read();       //解析HTTP请求（解析m_read_buf中的数据）
+    HTTP_CODE prase_request_line(char * text); //解析HTTP请求首行
+    HTTP_CODE prase_request_head(char * text); //解析HTTP请求头
+    HTTP_CODE prase_request_content(char * text); //解析HTTP请求体
+    LINE_STATUS parse_line();    //解析一行(获取一行），根据\r\n来
+    inline char * get_line() { return m_read_buf + m_start_line;} //获取一行数据，m_read_buf+m_start_line就是该行数据，函数体较少，使用内联函数
+    HTTP_CODE do_request(); //具体的解析处理
 };
 
 

@@ -99,6 +99,16 @@ void http_conn::init(int sockfd, sockaddr_in &addr)
     //添加到epoll红黑树中
     addfd(m_epollfd, m_sockfd, true);   //connfd需要有onshot事件
     m_user_count++; //总用户数（客户端数）+1
+    init();
+}
+
+//初始化连接其余的信息
+void http_conn::init(){ //把两个init分开写的原因是此init在解析的过程中要用到，若两个init写在一起会导致把sockfd也初始化了
+    m_read_idx = 0;
+
+    m_check_state = CHECK_STATE_REQUESTLINE;    //初始化状态为 当前正在解析请求首行
+    m_checked_index = 0;
+    m_start_line = 0;
 }
 
 //关闭连接
@@ -149,37 +159,92 @@ bool http_conn::read()
 }
 
 
-
-//解析HTTP请求（解析m_read_buf中的数据）
-HTTP_CODE http_conn::process_read()
+//主状态机 解析HTTP请求（解析m_read_buf中的数据）
+http_conn::HTTP_CODE http_conn::process_read()
 {
+    LINE_STATUS line_status = LINE_OK;
+    HTTP_CODE ret = NO_REQUEST;
 
+    char * text = 0; 
+    while(((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK)) \
+            || (line_status = parse_line()) == LINE_OK){
+        //解析到了一行完整的数据，或者解析到了请求体，也是完整的数据
+
+        //获取一行数据
+        text = get_line();
+
+        m_start_line = m_checked_index;//行起始位置更新
+        std::cout<<"获取到一行HTTP数据:"<<text<<std::endl;
+
+        switch(m_check_state){
+            case CHECK_STATE_REQUESTLINE:
+            {
+                ret = prase_request_line(text);
+                if(ret == BAD_REQUEST){
+                    return BAD_REQUEST;
+                }
+                break;
+            }
+
+            case CHECK_STATE_HEADER:
+            {
+                ret = prase_request_head(text);
+                if(ret == BAD_REQUEST){
+                    return BAD_REQUEST;
+                }else if(ret == GET_REQUEST){
+                    return do_request();//解析具体的信息
+                }
+                break;   
+            }
+
+            case CHECK_STATE_CONTENT:
+            {
+                ret = prase_request_content(text);
+                if(ret == GET_REQUEST){ //如果解析完了
+                    return do_request();//解析具体的信息
+                }
+                //否则就是有问题
+                line_status = LINE_OPEN;
+                break;
+            }
+
+            default:
+            {
+                return INTERNAL_ERROR;
+            }
+        }
+        return NO_REQUEST;//若到此还没获取到信息，则说明请求不完整
+    }
 }
 
 //解析HTTP请求首行
-HTTP_CODE http_conn::prase_request_line(char * text)
+http_conn::HTTP_CODE prase_request_line(char * text)
 {
 
 }
 
 //解析HTTP请求头
-HTTP_CODE http_conn::prase_request_line(char * text)
+http_conn::HTTP_CODE http_conn::prase_request_head(char * text)
 {
 
 }
 
 //解析HTTP请求体
-HTTP_CODE http_conn::prase_request_content(char * text)
+http_conn::HTTP_CODE http_conn::prase_request_content(char * text)
 {
 
 }
 
 //解析一行(获取一行），根据\r\n来
-LINE_STATUS http_conn::parse_line(char * text)
+http_conn::LINE_STATUS http_conn::parse_line()
 {
-
+    
 }
 
+
+http_conn::HTTP_CODE http_conn::do_request(){
+
+}
 
 
 //非阻塞的写
