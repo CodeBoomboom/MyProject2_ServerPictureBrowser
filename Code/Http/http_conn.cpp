@@ -113,6 +113,7 @@ void http_conn::init(){ //把两个init分开写的原因是此init在解析的�
     m_url = 0;
     m_version = 0;
     m_linger = false;
+    m_content_length = 0;
 
     bzero(m_read_buf,READ_BUFFER_SIZE);
 }
@@ -274,7 +275,37 @@ http_conn::HTTP_CODE http_conn::prase_request_line(char * text){
 //解析HTTP请求头
 http_conn::HTTP_CODE http_conn::prase_request_head(char * text)
 {
-
+    //遇到空行，表示头部解析完成
+    if(text[0] == '\n'){
+        //若HTTP请求有消息体，则还需要读取m_content_length字节的消息体
+        //状态机转移到CHECK_STATE_CONTENT状态
+        if( m_content_length != 0){
+            m_check_state = CHECK_STATE_CONTENT;
+            return NO_REQUEST;
+        }
+        //否则说明我们已经得到了一个完整的HTTP请求
+        return GET_REQUEST;
+    } else if(strncasecmp(text, "Connection:", 11) == 0){
+        //处理Connection 头部字段 Connection: keep-alive
+        text += 11;
+        text += strspn(text, " \t");    //strspn返回字符串中第一个不在指定字符串中出现的字符下标,即若text开头有\t，则跳过
+        if(strcasecmp(text, "keep-alive") == 0){
+            m_linger = true;
+        }
+    } else if(strncasecmp(text, "Content-Length:", 15) == 0){
+        //处理Content-Length字段
+        text += 15;
+        text += strspn(text, " \t");
+        m_content_length = atol(text); //char转为long int
+    } else if(strncasecmp(text, "Host:", 5) == 0){
+        //处理Host头部字段
+        text += 5;
+        text += strspn(text, " \t");
+        m_host = text;
+    } else{
+        std::cout<<"oop! 其他字段，无法识别: "<<text<<std::endl;
+    }
+    return NO_REQUEST;
 }
 
 //解析HTTP请求体
@@ -306,12 +337,13 @@ http_conn::LINE_STATUS http_conn::parse_line(){
                 m_read_buf[m_checked_index++] = '\0';   //先将\n置为\0，再将m_checked_index+1
                 return LINE_OK;
             }
-            return LINE_BAD;
+            return LINE_BAD;//其余情况出错（上一个字符不是\r）
         }
         return LINE_OPEN;   //？？？？存疑：为啥不是\r\n就要return LINEOPEN，不应该是循环直到有\r或者\n吗
-
+                            //已搞清：是上面的if语句中的return都没有执行到的话才会执行到这，返回一个LINE_OPEN，即还没有解析到/r/n，数据还不完整
     }
     return LINE_OK;    //这里也不明白为啥return LINE OK，正常是不会到这的，即使因为m_checked_index > m_read_idx执行到这了，也不应该return LINE OK
+                       //已搞懂：若因为m_checked_index > m_read_idx执行到这了，此时m_checked_index是指向m_read_idx的下一位的，但m_start_line还是指向m_read_buf中的最后一行数据的行首，此时还是LINE_OK的
 }
 
 
@@ -333,6 +365,7 @@ void http_conn::process()
 {
     //解析HTTP请求
     //有限状态机
+    std::cout<<"process_read解析请求......"<<std::endl;
     HTTP_CODE read_ret = process_read();
     if(read_ret == NO_REQUEST){
         //请求不完整，需要继续读客户端，要重置一下事件
@@ -340,11 +373,8 @@ void http_conn::process()
         return;
     }
     
-
-    std::cout<<"process解析请求，生成响应"<<std::endl;
-
-
     //生成响应
+    std::cout<<"process_write生成响应..."<<std::endl;
     bool write_ret = process_write(read_ret);
     if(!write_ret){
         close_conn();
