@@ -13,6 +13,7 @@
 #include<iostream>
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 #include<unistd.h>
 #include<fcntl.h>
 #include<sys/socket.h>
@@ -107,6 +108,12 @@ private:
 
     int m_checked_index;    //当前正在解析的字符在读缓冲区的位置
     int m_start_line;       //当前正在解析的行的起始位置
+    char * m_url;           //请求目标文件的文件名
+    char * m_version;       //协议版本，支持HTTP1.1
+    METHOD m_method;        //请求方法
+    char * m_host;          //主机名
+    bool m_linger;          //HTTP请求是否要保持连接
+
     CHECK_STATE m_check_state;  //主状态机当前所处的状态
     void init();            //初始化连接其余的信息
 
@@ -115,8 +122,13 @@ private:
     HTTP_CODE prase_request_head(char * text); //解析HTTP请求头
     HTTP_CODE prase_request_content(char * text); //解析HTTP请求体
     LINE_STATUS parse_line();    //解析一行(获取一行），根据\r\n来
-    inline char * get_line() { return m_read_buf + m_start_line;} //获取一行数据，m_read_buf+m_start_line就是该行数据，函数体较少，使用内联函数
+    inline char * get_line() { return m_read_buf + m_start_line;} //获取一行数据，m_read_buf+m_start_line就是该行数据\
+                                                                (在函数parse_line中已经将m_read_buf中的数据按字符串结束符\0分隔开了，所以此时获取m_read_buf+m_start_line获取到的就是该行数据）\
+                                                                函数体较少，使用内联函数
     HTTP_CODE do_request(); //具体的解析处理
+
+
+    HTTP_CODE process_write(HTTP_CODE read_ret);       //生成HTTP响应
 };
 
 

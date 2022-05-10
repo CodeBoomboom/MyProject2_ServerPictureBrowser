@@ -109,6 +109,12 @@ void http_conn::init(){ //把两个init分开写的原因是此init在解析的�
     m_check_state = CHECK_STATE_REQUESTLINE;    //初始化状态为 当前正在解析请求首行
     m_checked_index = 0;
     m_start_line = 0;
+    m_method = GET;
+    m_url = 0;
+    m_version = 0;
+    m_linger = false;
+
+    bzero(m_read_buf,READ_BUFFER_SIZE);
 }
 
 //关闭连接
@@ -156,6 +162,13 @@ bool http_conn::read()
         std::cout<<"没有数据"<<std::endl;
     }
     return true;
+}
+
+//非阻塞的写
+bool http_conn::write()
+{
+    std::cout<<"一次性写完数据"<<std::endl;
+    return true;//还没完成，先return true
 }
 
 
@@ -217,10 +230,45 @@ http_conn::HTTP_CODE http_conn::process_read()
     }
 }
 
-//解析HTTP请求首行
-http_conn::HTTP_CODE prase_request_line(char * text)
-{
+//解析HTTP请求首行，获得请求方法，目标URL，HTTP版本
+http_conn::HTTP_CODE http_conn::prase_request_line(char * text){
+    //GET /index.html HTTP/1.1
+    m_url = strpbrk(text, " \t");//strpbrk:判断空格和\t哪一个在text中先出现，（空格先出现，返回空格的索引）
 
+    //GET\0/index.html HTTP/1.1
+    *m_url++ = '\0';
+
+    //GET\0
+    char * method = text;
+    if(strcasecmp(method, "GET") == 0){ //只判断了GET
+        m_method = GET;
+    }else{
+        return BAD_REQUEST;
+    }
+
+    // /index.html HTTP/1.1
+    m_version = strpbrk(m_url, " \t");
+    if(!m_version){
+        return BAD_REQUEST;
+    }
+    // /index.html\0HTTP/1.1
+    *m_version++ = '\0';
+    if(strcasecmp(m_version, "HTTP/1.1") != 0){
+        return BAD_REQUEST;
+    }
+
+    // http://192.168.1.1:10000/index.html
+    if(strncasecmp(m_url, "http://", 7) == 0){
+        m_url += 7; // 192.168.1.1:10000/index.html 
+        m_url = strchr(m_url, '/');// /index.html 
+    }
+    if(!m_url || m_url[0] != '/'){
+        return BAD_REQUEST;
+    }
+
+    m_check_state = CHECK_STATE_HEADER; //已经解析完请求行，改变主状态机状态为检查请求头
+
+    return NO_REQUEST;  //虽然到此解析完了请求行，但还没有将完整的客户请求解析完，所以还是return NO_REQUEST
 }
 
 //解析HTTP请求头
@@ -235,23 +283,49 @@ http_conn::HTTP_CODE http_conn::prase_request_content(char * text)
 
 }
 
-//解析一行(获取一行），根据\r\n来
-http_conn::LINE_STATUS http_conn::parse_line()
-{
-    
+//解析一行(获取一行），根据\r\n来判断
+http_conn::LINE_STATUS http_conn::parse_line(){
+    char temp;
+    for(; m_checked_index < m_read_idx; ++m_checked_index){
+        temp = m_read_buf[m_checked_index];
+        if(temp == '\r'){
+            if((m_checked_index + 1) == m_read_idx){
+                //解析的当前字符是\r，且当前读缓冲区没有数据了，则认为是不完整的
+                return LINE_OPEN;
+            }else if(m_read_buf[m_checked_index+1] == '\n'){
+                //说明是'\r\n'，则将 m_read_buf[m_checked_index]以及m_read_buf[m_checked_index+1]置为字符串结束符\0，最后m_checked_index指向下一行数据的第一个元素
+                m_read_buf[m_checked_index++] = '\0';
+                m_read_buf[m_checked_index++] = '\0';
+                return LINE_OK;
+            }
+            return LINE_BAD;//其余情况出错
+        }else if(temp == '\n'){
+            //说明上一次检查最后一个字符为'\r'，再有数据来的时候就是'\n'
+            if((m_checked_index >1) && (m_read_buf[m_checked_index - 1] == '\r')){
+                m_read_buf[m_checked_index - 1] = '\0';
+                m_read_buf[m_checked_index++] = '\0';   //先将\n置为\0，再将m_checked_index+1
+                return LINE_OK;
+            }
+            return LINE_BAD;
+        }
+        return LINE_OPEN;   //？？？？存疑：为啥不是\r\n就要return LINEOPEN，不应该是循环直到有\r或者\n吗
+
+    }
+    return LINE_OK;    //这里也不明白为啥return LINE OK，正常是不会到这的，即使因为m_checked_index > m_read_idx执行到这了，也不应该return LINE OK
 }
 
 
 http_conn::HTTP_CODE http_conn::do_request(){
 
+
+
+    return ;
+
 }
 
 
-//非阻塞的写
-bool http_conn::write()
-{
-    std::cout<<"一次性写完数据"<<std::endl;
-    return true;//还没完成，先return true
+http_conn::HTTP_CODE http_conn::process_write(HTTP_CODE read_ret){
+
 }
 
 //处理客户端的请求(线程池中的工作线程即子线程执行的代码)
@@ -271,6 +345,11 @@ void http_conn::process()
 
 
     //生成响应
+    bool write_ret = process_write(read_ret);
+    if(!write_ret){
+        close_conn();
+    }
+    modfd(m_epollfd, m_sockfd, EPOLLOUT);
 
 }
 
