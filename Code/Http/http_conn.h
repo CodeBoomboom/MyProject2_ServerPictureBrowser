@@ -113,6 +113,7 @@ private:
     METHOD m_method;        //请求方法
     char * m_host;          //主机名
     bool m_linger;          //HTTP请求是否要保持连接
+    int m_content_length;   //请求体（消息体）长度
 
     CHECK_STATE m_check_state;  //主状态机当前所处的状态
     void init();            //初始化连接其余的信息
