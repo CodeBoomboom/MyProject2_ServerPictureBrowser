@@ -4,6 +4,17 @@
 int http_conn::m_epollfd = -1;
 int http_conn::m_user_count = 0;
 
+// 定义HTTP响应的一些状态信息
+const char* ok_200_title = "OK";
+const char* error_400_title = "Bad Request";
+const char* error_400_form = "Your request has bad syntax or is inherently impossible to satisfy.\n";
+const char* error_403_title = "Forbidden";
+const char* error_403_form = "You do not have permission to get file from this server.\n";
+const char* error_404_title = "Not Found";
+const char* error_404_form = "The requested file was not found on this server.\n";
+const char* error_500_title = "Internal Error";
+const char* error_500_form = "There was an unusual problem serving the requested file.\n";
+
 //网站的根目录
 const char* doc_root = "/home/xiaodexin/桌面/MyProject2_WebServer/Resources";
 
@@ -388,6 +399,70 @@ http_conn::HTTP_CODE http_conn::do_request(){
 
 }
 
+//根据服务器处理HTTP请求的结果，决定返回给客户端的内容
+bool http_conn::process_write(HTTP_CODE read_ret){
+    switch(read_ret)
+    {
+        case INTERNAL_ERROR:
+        {
+            add_status_line(500, error_500_title);
+            add_headers(strlen(error_500_form));
+            if(!add_content(error_500_form)){
+                return false;
+            }
+            break;
+        }
+        case BAD_REQUEST:
+        {
+            add_status_line(404, error_404_title);
+            add_headers(strlen(error_404_form));
+            if(!add_content(error_404_form)){
+                return false;
+            }
+        }
+        case NO_RESOURCE:
+        {
+
+        }
+        case FORBIDDEN_REQUEST:
+        {
+
+        }
+        case FILE_REQUEST:
+        {
+
+
+        }
+    }
+}
+
+//向写缓冲区m_write_buf中添加一行数据
+//format：格式，...：可变参数
+bool http_conn::add_response( const char* format, ... )
+{
+    if( m_write_idx >= WRITE_BUFFER_SIZE){
+        return false;   //写缓冲区写满
+    }
+    va_list arg_list;   //解析可变参数的参数指针
+    va_start( arg_list, format );// va_start使用第一个可选参数的位置来初始化arg_list参数指针,该宏的第二个参数必须是该函数最后一个有名称参数的名称(即feomat)
+    int len = vsnprintf( m_write_buf + m_write_idx, WRITE_BUFFER_SIZE-1-m_write_idx, format, arg_list);
+    /*  int _vsnprintf(char* str, size_t size, const char* format, va_list ap); 
+        函数功能：将可变参数格式化输出到一个字符数组
+        参数说明：
+            1. char *str [out],把生成的格式化的字符串存放在这里.
+            2. size_t size [in], str可接受的最大字符数 [1]  (非字节数，UNICODE一个字符两个字节),防止产生数组越界.
+            3. const char *format [in], 指定输出格式的字符串，它决定了你需要提供的可变参数的类型、个数和顺序。
+            4. va_list ap [in], va_list变量. va:variable-argument:可变参数
+        返回值：执行成功，返回最终生成字符串的长度，若生成字符串的长度大于size，则将字符串的前size个字符复制到str，同时将原串的长度返回（不包含终止符）；执行失败，返回负值，并置errno  
+    */
+    if( len >= (WRITE_BUFFER_SIZE-1-m_write_idx)){
+        return false;
+    }
+    m_write_idx += len;
+    va_end( arg_list );//当不再需要使用参数指针时，必须调用宏 va_end
+    return true;
+}
+
 //对内存映射区执行munmap操作
 void http_conn::unmap()
 {
@@ -395,12 +470,52 @@ void http_conn::unmap()
         Munmap(m_file_address, m_file_stat.st_size);
         m_file_address = 0;
     }
+}
+
+//添加响应状态行（响应首行）
+//status: 状态码  title：状态信息描述
+bool http_conn::add_status_line(int status, const char* title)
+{
+    return add_response("%s %d %s\r\n", "HTTP/1.1", status, title);
+}
+
+//添加响应头
+bool http_conn::add_headers( int content_length )
+{
 
 }
 
-http_conn::HTTP_CODE http_conn::process_write(HTTP_CODE read_ret){
+//添加响应体
+bool http_conn::add_content( const char* content )
+{
 
 }
+
+//添加响应类型
+bool http_conn::add_content_type()
+{
+
+}
+
+//添加响应体长度
+bool http_conn::add_content_length( int content_length )
+{
+
+}
+
+//添加响应是否保持连接
+bool http_conn::add_linger()
+{
+
+}
+//添加响应空行
+bool http_conn::add_blank_line()
+{
+
+
+}
+
+
 
 //处理客户端的请求(线程池中的工作线程即子线程执行的代码)
 void http_conn::process()
@@ -410,17 +525,19 @@ void http_conn::process()
     std::cout<<"process_read解析请求......"<<std::endl;
     HTTP_CODE read_ret = process_read();
     if(read_ret == NO_REQUEST){
-        //请求不完整，需要继续读客户端，要重置一下事件
+        //请求不完整，需要继续读客户端，要重置一下事件（因为使用了EPOLLONESHOT)
         modfd(m_epollfd, m_sockfd, EPOLLIN);
         return;
     }
     
     //生成响应
+    //根据解析结果来响应
     std::cout<<"process_write生成响应..."<<std::endl;
     bool write_ret = process_write(read_ret);
     if(!write_ret){
         close_conn();
     }
+    std::cout<<"修改fd为EPOLLOUT，监听客户端是否可写..."<<std::endl;
     modfd(m_epollfd, m_sockfd, EPOLLOUT);
 
 }

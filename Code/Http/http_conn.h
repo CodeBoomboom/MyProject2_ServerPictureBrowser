@@ -84,7 +84,7 @@ public:
         NO_REQUEST,
         GET_REQUEST,
         BAD_REQUEST,
-        NO_RESCOURCE,
+        NO_RESOURCE,
         FORBIDDEN_REQUEST,
         FILE_REQUEST,
         INTERNAL_ERROR,
@@ -102,19 +102,25 @@ public:
     bool read();        //非阻塞的读
     bool write();       //非阻塞的写
 
-
-
     HTTP_CODE process_read();       //解析HTTP请求（解析m_read_buf中的数据）
     HTTP_CODE prase_request_line(char * text); //解析HTTP请求首行
     HTTP_CODE prase_request_head(char * text); //解析HTTP请求头
     HTTP_CODE prase_request_content(char * text); //解析HTTP请求体
     LINE_STATUS parse_line();    //解析一行(获取一行），根据\r\n来
-    inline char * get_line() { return m_read_buf + m_start_line;} //获取一行数据，m_read_buf+m_start_line就是该行数据\
-                                                                (在函数parse_line中已经将m_read_buf中的数据按字符串结束符\0分隔开了，所以此时获取m_read_buf+m_start_line获取到的就是该行数据）\
-                                                                函数体较少，使用内联函数
+    inline char * get_line() { return m_read_buf + m_start_line;} //获取一行数据，m_read_buf+m_start_line就是该行数据在函数parse_line中已经将m_read_buf中的数据按字符串结束符\0分隔开了，所以此时获取m_read_buf+m_start_line获取到的就是该行数据）,函数体较少，使用内联函数
     HTTP_CODE do_request(); //具体的解析处理
+    
+
+    bool process_write(HTTP_CODE read_ret);       //生成HTTP响应
+    bool add_response( const char* format, ... );//向写缓冲区中添加一行数据
     void unmap();  //对内存映射区执行munmap操作
-    HTTP_CODE process_write(HTTP_CODE read_ret);       //生成HTTP响应
+    bool add_status_line(int status, const char* title);//添加响应状态行（响应首行）
+    bool add_headers( int content_length );//添加响应头
+    bool add_content( const char* content );//添加响应体
+    bool add_content_type();//添加响应类型
+    bool add_content_length( int content_length );//添加响应体长度
+    bool add_linger();//添加响应是否保持连接
+    bool add_blank_line();//添加响应空行
 
 private:
     int m_sockfd;           //该HTTP连接的socket
