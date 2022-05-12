@@ -119,17 +119,20 @@ void http_conn::init(int sockfd, sockaddr_in &addr)
 //初始化连接其余的信息
 void http_conn::init(){ //把两个init分开写的原因是此init在解析的过程中要用到，若两个init写在一起会导致把sockfd也初始化了
     m_read_idx = 0;
-
+    m_write_idx = 0;
+    m_method = GET;         // 默认请求方式为GET
     m_check_state = CHECK_STATE_REQUESTLINE;    //初始化状态为 当前正在解析请求首行
     m_checked_index = 0;
     m_start_line = 0;
     m_method = GET;
     m_url = 0;
     m_version = 0;
+    m_host = 0;
     m_linger = false;
     m_content_length = 0;
-
     bzero(m_read_buf,READ_BUFFER_SIZE);
+    bzero(m_write_buf, READ_BUFFER_SIZE);
+    bzero(m_real_file, FILENAME_LEN);
 }
 
 //关闭连接
@@ -179,14 +182,13 @@ bool http_conn::read()
     return true;
 }
 
-//非阻塞的写
-//将m_file_address响应体写到m_write_buf
-//写HTTP响应
+//非阻塞的分散写
+//写HTTP响应到客户端，此函数在main中被调用
 bool http_conn::write()
 {
     std::cout<<"一次性写完数据"<<std::endl;
     int temp= 0;
-    int bytes_have_senf = 0; //已经发送的字节
+    int bytes_have_send = 0; //已经发送的字节
     int bytes_to_send = m_write_idx;//将要发送的字节（m_write_idx）写缓冲区中待发送的字节数
 
     if(bytes_to_send == 0){
@@ -196,10 +198,34 @@ bool http_conn::write()
         return true;
     }
 
+    //轮询写
     while(1){
         //分散写
-        temp = writev(m_sockfd, m_iv, m_iv_count);
-
+        temp = Writev(m_sockfd, m_iv, m_iv_count);
+        if ( temp <= -1 ) {
+            // 如果TCP写缓冲没有空间，则等待下一轮EPOLLOUT事件，虽然在此期间，
+            // 服务器无法立即接收到同一客户的下一个请求，但可以保证连接的完整性。
+            if( errno == EAGAIN ) {
+                modfd( m_epollfd, m_sockfd, EPOLLOUT );
+                return true;
+            }
+            unmap();//否则说明发送失败，先关闭mmap映射，然后return false
+            return false;
+        }
+        bytes_to_send -= temp;
+        bytes_have_send += temp;
+        if ( bytes_to_send <= bytes_have_send ) {
+            // 发送HTTP响应成功，根据HTTP请求中的Connection字段决定是否立即关闭连接
+            unmap();
+            if(m_linger) {
+                init();
+                modfd( m_epollfd, m_sockfd, EPOLLIN );
+                return true;
+            } else {
+                modfd( m_epollfd, m_sockfd, EPOLLIN );
+                return false;
+            } 
+        }
     }
 
     return true;
@@ -419,6 +445,7 @@ http_conn::HTTP_CODE http_conn::do_request(){
 }
 
 //根据服务器处理HTTP请求的结果，决定返回给客户端的内容
+//这个函数其实是生成对应的响应，真正的写回客户端是在write()函数中实现的，该函数在main中被调用
 bool http_conn::process_write(HTTP_CODE read_ret){
     switch(read_ret)
     {
@@ -426,33 +453,56 @@ bool http_conn::process_write(HTTP_CODE read_ret){
         {
             add_status_line(500, error_500_title);
             add_headers(strlen(error_500_form));
-            if(!add_content(error_500_form)){
+            if(!add_content(error_500_form)){//出错的话响应体也发错误信息
                 return false;
             }
             break;
         }
         case BAD_REQUEST:
         {
-            add_status_line(404, error_404_title);
-            add_headers(strlen(error_404_form));
-            if(!add_content(error_404_form)){
+            add_status_line(400, error_400_title);
+            add_headers(strlen(error_400_form));
+            if(!add_content(error_400_form)){
                 return false;
             }
+            break;
         }
         case NO_RESOURCE:
         {
-
+            add_status_line( 404, error_404_title );
+            add_headers( strlen( error_404_form ) );
+            if ( ! add_content( error_404_form ) ) {
+                return false;
+            }
+            break;
         }
         case FORBIDDEN_REQUEST:
         {
-
+            add_status_line( 403, error_403_title );
+            add_headers(strlen( error_403_form));
+            if ( ! add_content( error_403_form ) ) {
+                return false;
+            }
+            break;
         }
         case FILE_REQUEST:
         {
-
-
+            add_status_line(200, ok_200_title );//把响应首行加入m_write_buf
+            add_headers(m_file_stat.st_size);//把响应头加入m_write_buf
+            m_iv[ 0 ].iov_base = m_write_buf;//要发的响应行和响应头的内存块m_write_buf
+            m_iv[ 0 ].iov_len = m_write_idx;
+            m_iv[ 1 ].iov_base = m_file_address;//要发的响应体的内存块
+            m_iv[ 1 ].iov_len = m_file_stat.st_size;
+            m_iv_count = 2;
+            return true;
         }
+        default:
+            return false;
     }
+    m_iv[ 0 ].iov_base = m_write_buf;
+    m_iv[ 0 ].iov_len = m_write_idx;
+    m_iv_count = 1;
+    return true;
 }
 
 //向写缓冲区m_write_buf中添加一行数据
