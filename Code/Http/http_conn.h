@@ -113,6 +113,7 @@ public:
                                                                 (在函数parse_line中已经将m_read_buf中的数据按字符串结束符\0分隔开了，所以此时获取m_read_buf+m_start_line获取到的就是该行数据）\
                                                                 函数体较少，使用内联函数
     HTTP_CODE do_request(); //具体的解析处理
+    void unmap();  //对内存映射区执行munmap操作
     HTTP_CODE process_write(HTTP_CODE read_ret);       //生成HTTP响应
 
 private:

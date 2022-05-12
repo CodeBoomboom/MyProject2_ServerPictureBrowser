@@ -365,7 +365,7 @@ http_conn::HTTP_CODE http_conn::do_request(){
     int len = strlen(doc_root);
     strncpy(m_real_file + len, m_url, FILENAME_LEN - len -1);
     // 获取m_real_file文件的相关的状态信息，-1失败，0成功
-    if(stat(m_real_file, &m_file_stat) < 0){
+    if(Stat(m_real_file, &m_file_stat) < 0){
         return NO_REQUEST;
     }
 
@@ -380,14 +380,23 @@ http_conn::HTTP_CODE http_conn::do_request(){
     }
 
     //以只读方式打开文件
-    int fd = open(m_real_file, O_RDONLY);
+    int fd = Open(m_real_file, O_RDONLY);
     //创建内存映射
-    m_file_address = (char*)mmap(NULL, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);    //mmap:使一个磁盘文件与存储空间中的一个缓冲区相映射
-    close(fd);
+    m_file_address = (char*)Mmap(NULL, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);    //mmap:使一个磁盘文件与存储空间中的一个缓冲区相映射
+    Close(fd);
     return FILE_REQUEST;
 
 }
 
+//对内存映射区执行munmap操作
+void http_conn::unmap()
+{
+    if(m_file_address){
+        Munmap(m_file_address, m_file_stat.st_size);
+        m_file_address = 0;
+    }
+
+}
 
 http_conn::HTTP_CODE http_conn::process_write(HTTP_CODE read_ret){
 

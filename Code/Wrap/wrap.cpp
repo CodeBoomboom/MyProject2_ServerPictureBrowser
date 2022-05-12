@@ -15,6 +15,49 @@ void perr_exit(const char *s)
 }
 
 /********************************************************************
+@FunName:int Open (const char *__path, int __oflag, ...);
+@Input:  const char *__path:路径
+		 __oflag：文件打开方式（读写标志（w/r/rw）等等）
+		 ...：mode，O_APPEND:追加	O_CREAT  O_EXCL:判断文件是否存在   O_TRUNC：把文件截断成0（清零）	O_NONBLOCK:阻塞 
+@Output: None
+@Retuval:返回一个文件描述符（整数）或者是-1（错误发生），即成功返回一个整数，失败返回-1,设置errno
+@Notes:  打开一个文件/设备
+@Author: XiaoDexin
+@Email:  xiaodexin0701@163.com
+@Time:   2022/05/12 15:22:46
+********************************************************************/
+int Open (const char *__path, int __oflag, ...){
+	int n;
+    if((n = open(__path,__oflag)) < 0)
+    {
+        perr_exit("open error");
+    }
+    return n;
+}
+
+/********************************************************************
+@FunName:int Stat(const char *path, struct stat *buf);
+@Input:  const char *path:文件路径
+@Output: struct stat *buf:（传出参数） 存放文件属性
+@Retuval:	成功： 0
+			失败： -1 errno
+@Notes:  获取文件属性（从inode结构体中获取）
+@Author: XiaoDexin
+@Email:  xiaodexin0701@163.com
+@Time:   2022/05/12 15:29:12
+********************************************************************/
+int Stat(const char *path, struct stat *buf)
+{
+	int n;
+    if((n = stat(path,buf)) < 0)
+    {
+        perr_exit("open error");
+    }
+    return n;
+}
+
+
+/********************************************************************
 @FunName:int Socket(int family, int type, int protocol)
 @Input:  family:协议类型：AF_INET、AF_INET6、AF_UNIX
          type:数据传输类型：SOCK_STREAM、SOCK_DGRAM
@@ -488,8 +531,56 @@ ssize_t Send(int fd, const void *buf, size_t n, int flags)
 	return i;
 }
 
+/********************************************************************
+@FunName:void *Mmap (void *__addr, size_t __len, int __prot,
+		   int __flags, int __fd, __off_t __offset)
+@Input:  addr：   指定映射区的首地址。通常传NULL，表示让系统自动分配
+   		 length：共享内存映射区的大小。（<= 文件的实际大小）
+   		 prot： 共享内存映射区的读写属性。PROT_READ、PROT_WRITE、PROT_READ|PROT_WRITE
+   		 flags：标注共享内存的共享属性。MAP_SHARED、MAP_PRIVATE
+    			flags里面的shared意思是修改会反映到磁盘 private表示修改不反映到磁盘上
+   		 fd: 用于创建共享内存映射区的那个文件的 文件描述符。
+   		 offset：默认0，表示映射文件全部。偏移位置。需是 4k 的整数倍。 
+@Output: None
+@Retuval:成功：映射区的首地址。
+   		失败：MAP_FAILED (void*(-1))， 设置errno
+@Notes:  None
+@Author: XiaoDexin
+@Email:  xiaodexin0701@163.com
+@Time:   2022/05/12 15:14:06
+********************************************************************/
+void *Mmap (void *__addr, size_t __len, int __prot,
+		   int __flags, int __fd, __off_t __offset)
+{
+	void * i;
+	if((i = mmap(__addr, __len, __prot, __flags, __fd, __offset)) == MAP_FAILED){
+		perr_exit("mmap error");
+	}
+	return i;
+}
 
 
+
+/********************************************************************
+@FunName:int Munmap (void *__addr, size_t __len)
+@Input:  void *__addr：Mmap()函数的返回值，也就是要释放的映射区地址
+		 size_t __len：要释放的映射区大小
+@Output: None
+@Retuval:成功0，失败-1
+@Notes:  释放mmap映射区
+@Author: XiaoDexin
+@Email:  xiaodexin0701@163.com
+@Time:   2022/05/12 15:09:16
+********************************************************************/
+int Munmap (void *__addr, size_t __len)
+{
+	ssize_t i;
+	if((i = munmap(__addr, __len)) < 0)
+	{
+		perr_exit("munmap error");
+	}
+	return i;
+}
 
 
 
