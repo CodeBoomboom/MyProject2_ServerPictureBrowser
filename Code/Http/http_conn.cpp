@@ -180,10 +180,29 @@ bool http_conn::read()
 }
 
 //非阻塞的写
+//将m_file_address响应体写到m_write_buf
+//写HTTP响应
 bool http_conn::write()
 {
     std::cout<<"一次性写完数据"<<std::endl;
-    return true;//还没完成，先return true
+    int temp= 0;
+    int bytes_have_senf = 0; //已经发送的字节
+    int bytes_to_send = m_write_idx;//将要发送的字节（m_write_idx）写缓冲区中待发送的字节数
+
+    if(bytes_to_send == 0){
+        //将要发送的字节数为0，这一次响应结束
+        modfd(m_epollfd, m_sockfd, EPOLLIN);//由于用了EPOLLONESHOT，所以每次读写结束都要重新modfd
+        init();
+        return true;
+    }
+
+    while(1){
+        //分散写
+        temp = writev(m_sockfd, m_iv, m_iv_count);
+
+    }
+
+    return true;
 }
 
 

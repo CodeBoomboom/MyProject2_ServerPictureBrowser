@@ -232,6 +232,40 @@ again:
 }
 
 /********************************************************************
+@FunName:ssize_t Writev (int __fd, const struct iovec *__iovec, int __count)
+@Input:  int __fd；要写入的文件描述符
+		 struct iovec *__iovec：多个不连续的内存地址，可以为数组，不同数组元素即为不同的内存地址
+		 int __count：要写出的数据缓冲区个数
+@Output: None
+@Retuval:成功为写出的字节数，出错为 -1 并设置相应的 errno
+@Notes:  将多个不连续的分散的内存地址的数据写入一个文件。其中：
+		struct iovec
+		{
+			void  *iov_base;    // 内存地址
+			size_t iov_len;     // 要写的数据大小
+		};
+		iovec 结构数组中元素的数目存在某个限制，具体取决于实现，通常头文件 <sys/uio.h> 中定义 IOV_MAX 常值为 1024 个
+@Author: XiaoDexin
+@Email:  xiaodexin0701@163.com
+@Time:   2022/05/12 20:28:43
+********************************************************************/
+ssize_t Writev (int __fd, const struct iovec *__iovec, int __count)
+{
+	ssize_t n;
+
+again:
+	if ( (n = writev(__fd, __iovec, __count)) == -1) {
+		if (errno == EINTR)
+			goto again;
+		else
+			return -1;
+	}
+	return n;
+}
+
+
+
+/********************************************************************
 @FunName:int Close(int fd)
 @Input:  fd:文件描述符名
 @Output: None
