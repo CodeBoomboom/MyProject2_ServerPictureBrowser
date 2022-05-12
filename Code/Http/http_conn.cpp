@@ -358,7 +358,7 @@ http_conn::LINE_STATUS http_conn::parse_line(){
 
 //当得到一个完整的、正确的HTTP请求时，我们就分析目标文件的属性，
 //如果目标文件存在，对所有用户可读，且不是目录，则使用mmap将其
-//映射到内存地址m_file_address出，并告诉调用者获取文件成功
+//映射到内存地址m_file_address中，并告诉调用者获取文件成功
 http_conn::HTTP_CODE http_conn::do_request(){
     // "/home/xiaodexin/桌面/MyProject2_WebServer"
     strcpy(m_real_file, doc_root);
@@ -382,7 +382,7 @@ http_conn::HTTP_CODE http_conn::do_request(){
     //以只读方式打开文件
     int fd = open(m_real_file, O_RDONLY);
     //创建内存映射
-    m_file_address = (char*)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    m_file_address = (char*)mmap(NULL, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);    //mmap:使一个磁盘文件与存储空间中的一个缓冲区相映射
     close(fd);
     return FILE_REQUEST;
 
