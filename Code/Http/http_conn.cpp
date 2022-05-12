@@ -480,39 +480,44 @@ bool http_conn::add_status_line(int status, const char* title)
 }
 
 //添加响应头
+//参数content_length：请求体长度。参数实际简化了，因为我们只实现了GET请求的响应，用不了那么多函数
 bool http_conn::add_headers( int content_length )
 {
-
+    add_content_length(content_length);
+    add_content_type();
+    add_linger();
+    add_blank_line();
 }
 
 //添加响应体
 bool http_conn::add_content( const char* content )
 {
-
+    return add_response( "%s", content );
 }
 
 //添加响应类型
+//此处做了简化，实际上应该根据客户端不同的请求进行识别
 bool http_conn::add_content_type()
 {
-
+    return add_response( "Content-Type:%s\r\n", "text/html");
 }
 
 //添加响应体长度
 bool http_conn::add_content_length( int content_length )
 {
-
+    return add_response("Content-Length: %d\r\n", content_length);
 }
 
 //添加响应是否保持连接
 bool http_conn::add_linger()
 {
-
+    return add_response( "Connection: %s\r\n", ( m_linger == true ) ? "keep-alive" : "close" );
 }
+
 //添加响应空行
 bool http_conn::add_blank_line()
 {
-
-
+    return add_response( "%s", "\r\n" );
 }
 
 
