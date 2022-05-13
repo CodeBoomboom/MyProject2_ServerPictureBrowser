@@ -186,7 +186,7 @@ bool http_conn::read()
 //写HTTP响应到客户端，此函数在main中被调用
 bool http_conn::write()
 {
-    std::cout<<"一次性写完数据"<<std::endl;
+    std::cout<<"开始向客户端写数据"<<std::endl;
     int temp= 0;
     int bytes_have_send = 0; //已经发送的字节
     int bytes_to_send = m_write_idx;//将要发送的字节（m_write_idx）写缓冲区中待发送的字节数
@@ -202,16 +202,18 @@ bool http_conn::write()
     while(1){
         //分散写
         std::cout<<"开始分散写..."<<std::endl;
-        std::cout<<"m_write_buf..."<<std::endl<<m_write_buf<<std::endl;
-        std::cout<<"m_file_address..."<<m_file_address<<std::endl;
+        std::cout<<"内存块m_write_buf(响应行+响应头)中数据："<<std::endl<<m_write_buf<<std::endl;
+        std::cout<<"内存块m_file_address(响应体)中数据："<<std::endl<<m_file_address<<std::endl;
         temp = Writev(m_sockfd, m_iv, m_iv_count);
         if ( temp <= -1 ) {
             // 如果TCP写缓冲没有空间，则等待下一轮EPOLLOUT事件，虽然在此期间，
             // 服务器无法立即接收到同一客户的下一个请求，但可以保证连接的完整性。
             if( errno == EAGAIN ) {
+                std::cout<<"写缓冲区没有空间，修改监听时间modfd为EPOLLOUT，继续监听直到写缓冲区可写"<<std::endl;
                 modfd( m_epollfd, m_sockfd, EPOLLOUT );
                 return true;
             }
+            std::cout<<"发送失败！(分散写失败)"<<std::endl;
             unmap();//否则说明发送失败，先关闭mmap映射，然后return false
             return false;
         }
@@ -221,6 +223,7 @@ bool http_conn::write()
             // 发送HTTP响应成功，根据HTTP请求中的Connection字段决定是否立即关闭连接
             unmap();
             if(m_linger) {
+                std::cout<<"发送成功！继续监听..."<<std::endl;
                 init();
                 modfd( m_epollfd, m_sockfd, EPOLLIN );
                 return true;
@@ -230,7 +233,7 @@ bool http_conn::write()
             } 
         }
     }
-
+    std::cout<<"发送成功！"<<std::endl;
     return true;
 }
 
@@ -470,6 +473,7 @@ bool http_conn::process_write(HTTP_CODE read_ret){
     {
         case INTERNAL_ERROR:
         {
+            std::cout<<"服务器内部错误！"<<std::endl;
             add_status_line(500, error_500_title);
             add_headers(strlen(error_500_form));
             if(!add_content(error_500_form)){//出错的话响应体也发错误信息
@@ -479,6 +483,7 @@ bool http_conn::process_write(HTTP_CODE read_ret){
         }
         case BAD_REQUEST:
         {
+            std::cout<<"请求的文件不存在或请求命令错误！"<<std::endl;
             add_status_line(400, error_400_title);
             add_headers(strlen(error_400_form));
             if(!add_content(error_400_form)){
@@ -488,6 +493,7 @@ bool http_conn::process_write(HTTP_CODE read_ret){
         }
         case NO_RESOURCE:
         {
+            std::cout<<"404 Not found! 请求的文件不存在"<<std::endl;
             add_status_line( 404, error_404_title );
             add_headers( strlen( error_404_form ) );
             if ( ! add_content( error_404_form ) ) {
@@ -497,6 +503,7 @@ bool http_conn::process_write(HTTP_CODE read_ret){
         }
         case FORBIDDEN_REQUEST:
         {
+            std::cout<<"没有访问该文件的权限！"<<std::endl;
             add_status_line( 403, error_403_title );
             add_headers(strlen( error_403_form));
             if ( ! add_content( error_403_form ) ) {
@@ -506,6 +513,7 @@ bool http_conn::process_write(HTTP_CODE read_ret){
         }
         case FILE_REQUEST:
         {
+            std::cout<<"开始生成响应..."<<std::endl;
             add_status_line(200, ok_200_title );//把响应首行加入m_write_buf
             add_headers(m_file_stat.st_size);//把响应头加入m_write_buf
             m_iv[ 0 ].iov_base = m_write_buf;//要发的响应行和响应头的内存块m_write_buf
@@ -513,6 +521,7 @@ bool http_conn::process_write(HTTP_CODE read_ret){
             m_iv[ 1 ].iov_base = m_file_address;//要发的响应体的内存块
             m_iv[ 1 ].iov_len = m_file_stat.st_size;
             m_iv_count = 2;
+            std::cout<<"生成响应成功！"<<std::endl;
             return true;
         }
         default:
@@ -627,12 +636,12 @@ void http_conn::process()
 
     //生成响应
     //根据解析结果来响应
-    std::cout<<"process_write生成响应..."<<std::endl;
+    std::cout<<"process_write开始生成响应..."<<std::endl;
     bool write_ret = process_write(read_ret);
     if(!write_ret){
         close_conn();
     }
-    std::cout<<"修改fd为EPOLLOUT，监听客户端是否可写..."<<std::endl;
+    std::cout<<"修改fd为EPOLLOUT，监听客户端是否可写"<<std::endl<<std::endl;
     modfd(m_epollfd, m_sockfd, EPOLLOUT);
 
 }
