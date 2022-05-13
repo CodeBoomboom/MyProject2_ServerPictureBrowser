@@ -201,6 +201,9 @@ bool http_conn::write()
     //轮询写
     while(1){
         //分散写
+        std::cout<<"开始分散写..."<<std::endl;
+        std::cout<<"m_write_buf..."<<std::endl<<m_write_buf<<std::endl;
+        std::cout<<"m_file_address..."<<m_file_address<<std::endl;
         temp = Writev(m_sockfd, m_iv, m_iv_count);
         if ( temp <= -1 ) {
             // 如果TCP写缓冲没有空间，则等待下一轮EPOLLOUT事件，虽然在此期间，
@@ -607,7 +610,7 @@ void http_conn::process()
     //生成响应
     //根据解析结果来响应
     std::cout<<"process_write生成响应..."<<std::endl;
-    bool write_ret = process_write(read_ret);
+    bool write_ret = process_write(FILE_REQUEST);
     if(!write_ret){
         close_conn();
     }
