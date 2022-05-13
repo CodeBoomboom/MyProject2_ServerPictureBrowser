@@ -9,9 +9,7 @@ CFLAGS = -std=c++14 -O2 -g -pthread -lmysqlclient
 #-lmysqlclient：使用sql客户端相关的库
 
 TARGET = My_Webserver
-#OBJS = ../code/log/*.cpp ../code/pool/*.cpp ../code/timer/*.cpp \
-       ../code/http/*.cpp ../code/server/*.cpp \
-       ../code/buffer/*.cpp ../code/main.cpp
+
 OBJS = $(wildcard ../Code/Log/*.cpp ../Code/Pool/*.cpp ../Code/Timer/*.cpp \
 				../Code/Http/*.cpp ../Code/Server/*.cpp ../Code/Wrap/*.cpp \
 				../Code/Buffer/*.cpp ../Code/main.cpp)#匹配相关目录下的所有.cpp文件
