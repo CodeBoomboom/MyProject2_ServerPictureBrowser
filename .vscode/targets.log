@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri May 13 17:07:25 2022
+# Make data base, printed on Fri May 13 18:37:50 2022
 
 # Variables
 
@@ -31,7 +31,7 @@ VSCODE_LOG_NATIVE = false
 # default
 MAKE_VERSION := 4.1
 # makefile
-CURDIR := /home/xiaodexin/桌面/MyProject2_WebServer
+CURDIR := /home/xiaodexin/桌面/MyProject2_ServerPictureBrowser
 # makefile
 SHELL = /bin/sh
 # environment
@@ -69,9 +69,9 @@ LS_COLORS =
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
-PWD = /home/xiaodexin/桌面/MyProject2_WebServer
+PWD = /home/xiaodexin/桌面/MyProject2_ServerPictureBrowser
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-49584b18-cfc2-4c6d-a2e3-6e01851c3115.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-2f6e41e2-98be-471c-8221-59bde4838f92.sock
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
 # environment
@@ -211,6 +211,6 @@ Makefile:
 # strcache performance: lookups = 23 / hit rate = 21%
 # hash-table stats:
 # Load=18/8192=0%, Rehash=0, Collisions=1/23=4%
-# Finished Make data base on Fri May 13 17:07:25 2022
+# Finished Make data base on Fri May 13 18:37:50 2022
 
  
