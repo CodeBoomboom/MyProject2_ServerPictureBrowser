@@ -51,7 +51,7 @@ int Stat(const char *path, struct stat *buf)
 	int n;
     if((n = stat(path,buf)) < 0)
     {
-        perr_exit("open error");
+        perr_exit("stat error");
     }
     return n;
 }
@@ -533,7 +533,7 @@ ssize_t Recv(int fd, void *buf, size_t n, int flags)
 	if((i = recv(fd,buf,n,flags)) < 0)
 	{
 		if(errno == EAGAIN || errno == EWOULDBLOCK){
-			//没有数据
+			//只是没有数据，不应该判断为出错
 		}		
 		else{
 			perr_exit("recv error");

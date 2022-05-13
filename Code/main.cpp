@@ -101,8 +101,7 @@ int main(int argc, char* argv[])
     std::cout<<"创建http_conn任务队列数组users..."<<std::endl;
     http_conn * users = new http_conn[MAX_FD];
     std::cout<<"http_conn任务队列数组users创建完成！"<<std::endl;
-    
-    sleep(2);
+
     std::cout<<"开始进行网络通信相关流程"<<std::endl;
     //监听套接字  
     int listenfd = Socket(PF_INET, SOCK_STREAM, 0);
@@ -169,6 +168,7 @@ int main(int argc, char* argv[])
                 std::cout<<"可读"<<std::endl;
                 if(users[sockfd].read()){//一次性把数据都读完
                     //交给线程池处理
+                    std::cout<<"交给线程池处理..."<<std::endl;
                     pool->append(users + sockfd);   //users + sockfd就是该sockfd的地址，因为sockfd也是users[sockfd]的索引值(在第160行添加的时候是直接将connfd作为索引的)
                 }else{
                     //读失败

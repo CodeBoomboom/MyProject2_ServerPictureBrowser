@@ -169,7 +169,7 @@ bool http_conn::read()
             //对方关闭连接
             return false;
         }
-        //读到数据
+        //bytes_read>0 读到数据
         //更新m_read_idx
         m_read_idx += bytes_read;
     }
@@ -177,7 +177,7 @@ bool http_conn::read()
     if(m_read_buf){
         std::cout<<"读到了数据:"<<std::endl<<m_read_buf<<std::endl;
     }else{
-        std::cout<<"没有数据"<<std::endl;
+        std::cout<<"没有读到数据"<<std::endl;
     }
     return true;
 }
@@ -242,8 +242,8 @@ http_conn::HTTP_CODE http_conn::process_read()
     HTTP_CODE ret = NO_REQUEST;
 
     char * text = 0; 
-    while(((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK)) \
-            || (line_status = parse_line()) == LINE_OK){
+    while(((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK))
+            || ((line_status = parse_line()) == LINE_OK)){
         //解析到了一行完整的数据，或者解析到了请求体，也是完整的数据
 
         //获取一行数据
@@ -259,15 +259,24 @@ http_conn::HTTP_CODE http_conn::process_read()
                 if(ret == BAD_REQUEST){
                     return BAD_REQUEST;
                 }
+                std::cout<<"获取到请求行："<<std::endl;
+                std::cout<<"m_url:"<<m_url<<std::endl;
+                std::cout<<"m_version:"<<m_version<<std::endl;
+                std::cout<<"m_method:"<<m_method<<std::endl;
                 break;
             }
 
             case CHECK_STATE_HEADER:
             {
                 ret = prase_request_head(text);
+                std::cout<<"获取到请求头："<<text<<std::endl;
+                std::cout<<"Connection::"<<m_linger<<std::endl;
+                std::cout<<"Connection-Length:"<<m_content_length<<std::endl;
+                std::cout<<"Host:"<<m_host<<std::endl;
                 if(ret == BAD_REQUEST){
                     return BAD_REQUEST;
                 }else if(ret == GET_REQUEST){
+                    std::cout<<"1获取完成, 开始具体解析"<<std::endl;
                     return do_request();//解析具体的信息
                 }
                 break;   
@@ -277,20 +286,21 @@ http_conn::HTTP_CODE http_conn::process_read()
             {
                 ret = prase_request_content(text);
                 if(ret == GET_REQUEST){ //如果解析完了
+                    std::cout<<"2获取完成, 开始具体解析"<<std::endl;
                     return do_request();//解析具体的信息
                 }
                 //否则就是有问题
                 line_status = LINE_OPEN;
                 break;
             }
-
             default:
             {
                 return INTERNAL_ERROR;
             }
         }
-        return NO_REQUEST;//若到此还没获取到信息，则说明请求不完整
     }
+    std::cout<<"若到此还没获取到信息，则说明请求不完整"<<std::endl;
+    return NO_REQUEST;//若到此还没获取到信息，则说明请求不完整
 }
 
 //解析HTTP请求首行，获得请求方法，目标URL，HTTP版本
@@ -338,7 +348,7 @@ http_conn::HTTP_CODE http_conn::prase_request_line(char * text){
 http_conn::HTTP_CODE http_conn::prase_request_head(char * text)
 {
     //遇到空行，表示头部解析完成
-    if(text[0] == '\n'){
+    if(text[0] == '\0'){
         //若HTTP请求有消息体，则还需要读取m_content_length字节的消息体
         //状态机转移到CHECK_STATE_CONTENT状态
         if( m_content_length != 0){
@@ -385,12 +395,16 @@ http_conn::HTTP_CODE http_conn::prase_request_content(char * text)
 
 //解析一行(获取一行），根据\r\n来判断
 http_conn::LINE_STATUS http_conn::parse_line(){
+    std::cout<<"开始解析一行"<<std::endl;
     char temp;
+    std::cout<<"m_checked_index:"<<m_checked_index<<std::endl;
+    std::cout<<"m_read_idx:"<<m_read_idx<<std::endl;
     for(; m_checked_index < m_read_idx; ++m_checked_index){
         temp = m_read_buf[m_checked_index];
         if(temp == '\r'){
             if((m_checked_index + 1) == m_read_idx){
                 //解析的当前字符是\r，且当前读缓冲区没有数据了，则认为是不完整的
+                std::cout<<"LINE_OPEN1"<<std::endl;
                 return LINE_OPEN;
             }else if(m_read_buf[m_checked_index+1] == '\n'){
                 //说明是'\r\n'，则将 m_read_buf[m_checked_index]以及m_read_buf[m_checked_index+1]置为字符串结束符\0，最后m_checked_index指向下一行数据的第一个元素
@@ -398,6 +412,7 @@ http_conn::LINE_STATUS http_conn::parse_line(){
                 m_read_buf[m_checked_index++] = '\0';
                 return LINE_OK;
             }
+            std::cout<<"LINE_BAD1"<<std::endl;
             return LINE_BAD;//其余情况出错
         }else if(temp == '\n'){
             //说明上一次检查最后一个字符为'\r'，再有数据来的时候就是'\n'
@@ -406,13 +421,12 @@ http_conn::LINE_STATUS http_conn::parse_line(){
                 m_read_buf[m_checked_index++] = '\0';   //先将\n置为\0，再将m_checked_index+1
                 return LINE_OK;
             }
+            std::cout<<"LINE_BAD2"<<std::endl;
             return LINE_BAD;//其余情况出错（上一个字符不是\r）
         }
-        return LINE_OPEN;   //？？？？存疑：为啥不是\r\n就要return LINEOPEN，不应该是循环直到有\r或者\n吗
-                            //已搞清：是上面的if语句中的return都没有执行到的话才会执行到这，返回一个LINE_OPEN，即还没有解析到/r/n，数据还不完整
     }
-    return LINE_OK;    //这里也不明白为啥return LINE OK，正常是不会到这的，即使因为m_checked_index > m_read_idx执行到这了，也不应该return LINE OK
-                       //已搞懂：若因为m_checked_index > m_read_idx执行到这了，此时m_checked_index是指向m_read_idx的下一位的，但m_start_line还是指向m_read_buf中的最后一行数据的行首，此时还是LINE_OK的
+    std::cout<<"LINE_OPEN2"<<std::endl;
+    return LINE_OPEN;
 }
 
 //当得到一个完整的、正确的HTTP请求时，我们就分析目标文件的属性，
@@ -423,6 +437,7 @@ http_conn::HTTP_CODE http_conn::do_request(){
     strcpy(m_real_file, doc_root);
     int len = strlen(doc_root);
     strncpy(m_real_file + len, m_url, FILENAME_LEN - len -1);
+    std::cout<<"路径m_real_file："<<m_real_file<<std::endl;
     // 获取m_real_file文件的相关的状态信息，-1失败，0成功
     if(Stat(m_real_file, &m_file_stat) < 0){
         return NO_REQUEST;
@@ -441,8 +456,9 @@ http_conn::HTTP_CODE http_conn::do_request(){
     //以只读方式打开文件
     int fd = Open(m_real_file, O_RDONLY);
     //创建内存映射
-    m_file_address = (char*)Mmap(NULL, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);    //mmap:使一个磁盘文件与存储空间中的一个缓冲区相映射
+    m_file_address = (char*)Mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);    //mmap:使一个磁盘文件与存储空间中的一个缓冲区相映射
     Close(fd);
+    std::cout<<"FILE_REQUEST"<<m_real_file<<std::endl;
     return FILE_REQUEST;
 
 }
@@ -599,10 +615,11 @@ void http_conn::process()
 {
     //解析HTTP请求
     //有限状态机
-    std::cout<<"process_read解析请求......"<<std::endl;
+    std::cout<<"process_read开始解析请求......"<<std::endl;
     HTTP_CODE read_ret = process_read();
     if(read_ret == NO_REQUEST){
         //请求不完整，需要继续读客户端，要重置一下事件（因为使用了EPOLLONESHOT)
+        std::cout<<"请求不完整，需要modfd"<<std::endl;
         modfd(m_epollfd, m_sockfd, EPOLLIN);
         return;
     }
@@ -610,7 +627,7 @@ void http_conn::process()
     //生成响应
     //根据解析结果来响应
     std::cout<<"process_write生成响应..."<<std::endl;
-    bool write_ret = process_write(FILE_REQUEST);
+    bool write_ret = process_write(read_ret);
     if(!write_ret){
         close_conn();
     }
