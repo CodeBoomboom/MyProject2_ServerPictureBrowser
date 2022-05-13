@@ -76,7 +76,7 @@ extern void modfd(int epollfd,  int fd, int ev);
 int main(int argc, char* argv[])
 {
     if(argc <= 1){
-        std::cout<<"按照如下格式运行："<<basename(argv[0])<<"port_number"<<std::endl;   // ./server 端口号
+        std::cout<<"请按照如下格式运行："<<basename(argv[0])<<"port_number"<<std::endl;   // ./server 端口号
         exit(-1);
     }
 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
     http_conn * users = new http_conn[MAX_FD];
     std::cout<<"http_conn任务队列数组users创建完成！"<<std::endl;
 
-    std::cout<<"开始进行网络通信相关流程"<<std::endl;
+    std::cout<<"开启服务器，进行监听..."<<std::endl;
     //监听套接字  
     int listenfd = Socket(PF_INET, SOCK_STREAM, 0);
     
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     Listen(listenfd,5);
 
     //创建epoll对象，事件数组，添加
-    std::cout<<"创建epoll对象"<<std::endl;
+    std::cout<<"创建epoll对象..."<<std::endl;
     epoll_event events[MAX_EVENT_NUMBER];
     int epollfd = Epoll_create(5);
 
@@ -129,10 +129,10 @@ int main(int argc, char* argv[])
     //将监听的文件描述符添加到epoll对象中
     addfd(epollfd, listenfd, false);    //listenfd不需要添加oneshot
     http_conn::m_epollfd = epollfd;
-
+    std::cout<<"服务器已开启"<<std::endl;
 
     while(true){
-        std::cout<<"epoll_wait..."<<std::endl;
+        std::cout<<std::endl<<"epoll_wait监听..."<<std::endl<<std::endl;
         int num = Epoll_wait(epollfd, events, MAX_EVENT_NUMBER, -1);//阻塞监听epoll上的fd
 
         //循环遍历事件数组

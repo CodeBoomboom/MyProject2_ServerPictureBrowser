@@ -50,8 +50,8 @@ void addfd(int epollfd, int fd, bool one_shot)
 {
     epoll_event event;
     event.data.fd = fd;
-    //event.events = EPOLLIN | EPOLLRDHUP;//EPOLLRDHUP是内核2.6.17后才有的，该事件作用是若对端连接断开时，触发此事件，在底层对对端断开进行处理（之前是在上层通过Recv函数返回值判断）
-    event.events = EPOLLIN | EPOLLRDHUP | EPOLLET;//边沿触发
+    event.events = EPOLLIN | EPOLLRDHUP;//EPOLLRDHUP是内核2.6.17后才有的，该事件作用是若对端连接断开时，触发此事件，在底层对对端断开进行处理（之前是在上层通过Recv函数返回值判断）
+    //event.events = EPOLLIN | EPOLLRDHUP | EPOLLET;//边沿触发
     if(one_shot){
         event.events | EPOLLONESHOT;
     }
@@ -259,24 +259,24 @@ http_conn::HTTP_CODE http_conn::process_read()
                 if(ret == BAD_REQUEST){
                     return BAD_REQUEST;
                 }
-                std::cout<<"获取到请求行："<<std::endl;
-                std::cout<<"m_url:"<<m_url<<std::endl;
-                std::cout<<"m_version:"<<m_version<<std::endl;
-                std::cout<<"m_method:"<<m_method<<std::endl;
+                // std::cout<<"获取到请求行："<<std::endl;
+                // std::cout<<"m_url:"<<m_url<<std::endl;
+                // std::cout<<"m_version:"<<m_version<<std::endl;
+                // std::cout<<"m_method:"<<m_method<<std::endl;
                 break;
             }
 
             case CHECK_STATE_HEADER:
             {
                 ret = prase_request_head(text);
-                std::cout<<"获取到请求头："<<text<<std::endl;
-                std::cout<<"Connection::"<<m_linger<<std::endl;
-                std::cout<<"Connection-Length:"<<m_content_length<<std::endl;
-                std::cout<<"Host:"<<m_host<<std::endl;
+                // std::cout<<"获取到请求头："<<text<<std::endl;
+                // std::cout<<"Connection::"<<m_linger<<std::endl;
+                // std::cout<<"Connection-Length:"<<m_content_length<<std::endl;
+                // std::cout<<"Host:"<<m_host<<std::endl;
                 if(ret == BAD_REQUEST){
                     return BAD_REQUEST;
                 }else if(ret == GET_REQUEST){
-                    std::cout<<"1获取完成, 开始具体解析"<<std::endl;
+                    std::cout<<"获取完成, 开始具体解析"<<std::endl;
                     return do_request();//解析具体的信息
                 }
                 break;   
@@ -286,7 +286,7 @@ http_conn::HTTP_CODE http_conn::process_read()
             {
                 ret = prase_request_content(text);
                 if(ret == GET_REQUEST){ //如果解析完了
-                    std::cout<<"2获取完成, 开始具体解析"<<std::endl;
+                    std::cout<<"获取完成, 开始具体解析"<<std::endl;
                     return do_request();//解析具体的信息
                 }
                 //否则就是有问题
@@ -299,7 +299,7 @@ http_conn::HTTP_CODE http_conn::process_read()
             }
         }
     }
-    std::cout<<"若到此还没获取到信息，则说明请求不完整"<<std::endl;
+    // std::cout<<"若到此还没获取到信息，则说明请求不完整"<<std::endl;
     return NO_REQUEST;//若到此还没获取到信息，则说明请求不完整
 }
 
@@ -375,7 +375,8 @@ http_conn::HTTP_CODE http_conn::prase_request_head(char * text)
         text += strspn(text, " \t");
         m_host = text;
     } else{
-        std::cout<<"oop! 其他字段，无法识别: "<<text<<std::endl;
+        //获取到其他字段，暂不处理
+        //std::cout<<"oop! 其他字段，无法识别: "<<text<<std::endl;
     }
     return NO_REQUEST;
 }
@@ -395,10 +396,10 @@ http_conn::HTTP_CODE http_conn::prase_request_content(char * text)
 
 //解析一行(获取一行），根据\r\n来判断
 http_conn::LINE_STATUS http_conn::parse_line(){
-    std::cout<<"开始解析一行"<<std::endl;
+    // std::cout<<"开始解析一行（将每行数据按“\\0”分隔开"<<std::endl;
     char temp;
-    std::cout<<"m_checked_index:"<<m_checked_index<<std::endl;
-    std::cout<<"m_read_idx:"<<m_read_idx<<std::endl;
+    // std::cout<<"m_checked_index:"<<m_checked_index<<std::endl;
+    // std::cout<<"m_read_idx:"<<m_read_idx<<std::endl;
     for(; m_checked_index < m_read_idx; ++m_checked_index){
         temp = m_read_buf[m_checked_index];
         if(temp == '\r'){
@@ -437,7 +438,6 @@ http_conn::HTTP_CODE http_conn::do_request(){
     strcpy(m_real_file, doc_root);
     int len = strlen(doc_root);
     strncpy(m_real_file + len, m_url, FILENAME_LEN - len -1);
-    std::cout<<"路径m_real_file："<<m_real_file<<std::endl;
     // 获取m_real_file文件的相关的状态信息，-1失败，0成功
     if(Stat(m_real_file, &m_file_stat) < 0){
         return NO_REQUEST;
@@ -458,7 +458,7 @@ http_conn::HTTP_CODE http_conn::do_request(){
     //创建内存映射
     m_file_address = (char*)Mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);    //mmap:使一个磁盘文件与存储空间中的一个缓冲区相映射
     Close(fd);
-    std::cout<<"FILE_REQUEST"<<m_real_file<<std::endl;
+    std::cout<<"解析到的请求文件的路径m_real_file："<<m_real_file<<std::endl<<"解析请求完成！"<<std::endl;
     return FILE_REQUEST;
 
 }
@@ -623,7 +623,8 @@ void http_conn::process()
         modfd(m_epollfd, m_sockfd, EPOLLIN);
         return;
     }
-    
+    std::cout<<"process_read解析请求完成！"<<std::endl<<std::endl;
+
     //生成响应
     //根据解析结果来响应
     std::cout<<"process_write生成响应..."<<std::endl;
