@@ -38,7 +38,7 @@ private:
     //互斥锁
     locker m_queuelocker;
 
-    //信号量用来判断是否有任务需要处理
+    //信号量用来判断是否有任务需要处理，也可以用条件变量
     sem m_queuestat;
 
     //是否结束线程

@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri May 13 18:37:50 2022
+# Make data base, printed on Mon May 16 19:23:27 2022
 
 # Variables
 
@@ -53,7 +53,7 @@ LESSOPEN = | /usr/bin/lesspipe %s
 # environment
 VSCODE_CWD = /home/xiaodexin
 # environment
-SSH_CONNECTION = 192.168.246.1 50767 192.168.246.128 22
+SSH_CONNECTION = 192.168.246.1 63669 192.168.246.128 22
 # environment
 PATH = /home/xiaodexin/.vscode-server/bin/da15b6fd3ef856477bf6f4fb29ba1b7af717770d/bin/remote-cli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/git/bin
 # environment
@@ -71,7 +71,7 @@ VSCODE_PIPE_LOGGING = true
 # environment
 PWD = /home/xiaodexin/桌面/MyProject2_ServerPictureBrowser
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-2f6e41e2-98be-471c-8221-59bde4838f92.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-47916ff9-c2b5-4576-9959-bd2aea169ab5.sock
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
 # environment
@@ -101,7 +101,7 @@ MAKECMDGOALS := all
 # environment
 SHLVL = 3
 # environment
-XDG_SESSION_ID = 7
+XDG_SESSION_ID = 5
 # environment
 USER = xiaodexin
 # makefile
@@ -121,7 +121,7 @@ MAKEFLAGS = pqrR
 # environment
 MFLAGS = -pqrR
 # environment
-SSH_CLIENT = 192.168.246.1 50767 22
+SSH_CLIENT = 192.168.246.1 63669 22
 # environment
 MAIL = /var/mail/xiaodexin
 # automatic
@@ -211,6 +211,6 @@ Makefile:
 # strcache performance: lookups = 23 / hit rate = 21%
 # hash-table stats:
 # Load=18/8192=0%, Rehash=0, Collisions=1/23=4%
-# Finished Make data base on Fri May 13 18:37:50 2022
+# Finished Make data base on Mon May 16 19:23:27 2022
 
  
