@@ -532,7 +532,7 @@ ssize_t Recv(int fd, void *buf, size_t n, int flags)
 	ssize_t i;
 	if((i = recv(fd,buf,n,flags)) < 0)
 	{
-		if(errno == EAGAIN || errno == EWOULDBLOCK){
+		if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR){
 			//只是没有数据，不应该判断为出错
 		}		
 		else{
