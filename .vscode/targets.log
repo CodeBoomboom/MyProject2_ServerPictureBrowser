@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Wed May 18 08:39:00 2022
+# Make data base, printed on Wed May 18 14:51:03 2022
 
 # Variables
 
@@ -71,7 +71,7 @@ VSCODE_PIPE_LOGGING = true
 # environment
 PWD = /home/xiaodexin/桌面/MyProject2_ServerPictureBrowser
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-eaa0cf12-5ef6-4bae-bb3e-053332ee3af2.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-f9fefffb-23f6-4102-b30f-dc677dd36a42.sock
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
 # environment
@@ -159,9 +159,9 @@ VSCODE_EXTHOST_WILL_SEND_SOCKET = true
 
 # Directories
 
-# . (device 2049, inode 526850): 12 files, no impossibilities.
+# . (device 2049, inode 526850): 13 files, no impossibilities.
 
-# 12 files, no impossibilities in 1 directories.
+# 13 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -205,12 +205,12 @@ Makefile:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 18 / storage = 136 B / avg = 7 B
-# current buf: size = 8162 B / used = 136 B / count = 18 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 19 / storage = 149 B / avg = 7 B
+# current buf: size = 8162 B / used = 149 B / count = 19 / avg = 7 B
 
-# strcache performance: lookups = 23 / hit rate = 21%
+# strcache performance: lookups = 24 / hit rate = 20%
 # hash-table stats:
-# Load=18/8192=0%, Rehash=0, Collisions=1/23=4%
-# Finished Make data base on Wed May 18 08:39:00 2022
+# Load=19/8192=0%, Rehash=0, Collisions=1/24=4%
+# Finished Make data base on Wed May 18 14:51:03 2022
 
  
